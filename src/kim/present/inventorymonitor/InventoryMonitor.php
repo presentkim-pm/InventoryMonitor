@@ -29,7 +29,7 @@ use kim\present\inventorymonitor\lang\PluginLang;
 use kim\present\inventorymonitor\listener\{InventoryEventListener, PlayerEventListener};
 use kim\present\inventorymonitor\task\CheckUpdateAsyncTask;
 use pocketmine\command\{Command, CommandSender, PluginCommand};
-use pocketmine\permission\{Permission, PermissionManager, PermissionParser};
+use pocketmine\permission\{PermissionManager, PermissionParser};
 use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
 
