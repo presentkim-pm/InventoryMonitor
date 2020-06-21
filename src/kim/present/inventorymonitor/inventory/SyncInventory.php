@@ -350,7 +350,8 @@ class SyncInventory extends BlockInventory{
 
             $tile = $who->getWorld()->getTile($vec);
             if($tile instanceof Spawnable){
-                $who->getNetworkSession()->sendDataPacket(protocol\BlockActorDataPacket::create($tile->getPos()->x, $tile->getPos()->y, $tile->getPos()->z, (new NetworkNbtSerializer())->write(new TreeRoot($tile->getSpawnCompound()))));
+
+                $who->getNetworkSession()->sendDataPacket(protocol\BlockActorDataPacket::create($tile->getPos()->x, $tile->getPos()->y, $tile->getPos()->z, $tile->getSerializedSpawnCompound()));
             }
         }
         unset($this->vectors[$key]);
