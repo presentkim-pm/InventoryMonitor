@@ -327,9 +327,7 @@ class SyncInventory extends BlockInventory{
         $vec = $this->vectors[$key];
 
         for($i = 0; $i < 2; $i++){
-            $pk = UpdateBlockPacket::create($vec->x + $i, $vec->y, $vec->z, RuntimeBlockMapping::getInstance()->toRuntimeId(BlockLegacyIds::CHEST));
-            $pk->flags = 0;
-            $who->getNetworkSession()->sendDataPacket($pk);
+            $who->getNetworkSession()->sendDataPacket(UpdateBlockPacket::create($vec->x + $i, $vec->y, $vec->z, RuntimeBlockMapping::getInstance()->toRuntimeId(BlockLegacyIds::CHEST)));
 
             $player = Server::getInstance()->getPlayerExact($this->playerName);
 
