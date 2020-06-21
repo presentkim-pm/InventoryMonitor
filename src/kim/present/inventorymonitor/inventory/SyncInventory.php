@@ -24,30 +24,44 @@ declare(strict_types=1);
 
 namespace kim\present\inventorymonitor\inventory;
 
-use kim\present\inventorymonitor\inventory\group\{ArmorGroup, CursorGroup, InvGroup, SlotGroup};
+use kim\present\inventorymonitor\inventory\group\{
+    ArmorGroup,
+    CursorGroup,
+    InvGroup,
+    SlotGroup
+};
 use kim\present\inventorymonitor\InventoryMonitor;
 use pocketmine\block\inventory\BlockInventory;
-use pocketmine\item\ItemFactory;
-use pocketmine\nbt\TreeRoot;
+use pocketmine\block\tile\Spawnable;
 use pocketmine\network\mcpe\convert\RuntimeBlockMapping;
 use pocketmine\network\mcpe\convert\TypeConverter;
+use pocketmine\network\mcpe\protocol\{
+    BlockActorDataPacket,
+    ContainerOpenPacket,
+    InventoryContentPacket,
+    UpdateBlockPacket
+};
 use pocketmine\network\mcpe\protocol\types\CacheableNbt;
-use pocketmine\network\mcpe\protocol\types\inventory\ItemStack;
-use pocketmine\network\mcpe\protocol\UpdateBlockPacket;
-use pocketmine\network\mcpe\protocol\serializer\NetworkNbtSerializer;
+use pocketmine\network\mcpe\protocol\types\inventory\{
+    ItemStack,
+    WindowTypes
+};
 use pocketmine\player\Player;
-use pocketmine\Server;
 use pocketmine\block\BlockLegacyIds;
 use pocketmine\inventory\BaseInventory;
-use pocketmine\item\Item;
 use pocketmine\math\Vector3;
 use pocketmine\nbt\NBT;
-use pocketmine\nbt\tag\{CompoundTag, ListTag};
-use pocketmine\network\mcpe\protocol;
-use pocketmine\network\mcpe\protocol\types\inventory\WindowTypes;
+use pocketmine\nbt\tag\{
+    CompoundTag,
+    ListTag
+};
 use pocketmine\scheduler\ClosureTask;
-use pocketmine\block\tile\Spawnable;
 use pocketmine\world\Position;
+use pocketmine\item\{
+    Item,
+    ItemFactory
+};
+use pocketmine\Server;
 
 class SyncInventory extends BlockInventory{
     /** @var SyncInventory[] */
@@ -208,24 +222,15 @@ class SyncInventory extends BlockInventory{
 
         $this->sendFakeChestBlock($who);
         $vec = $this->vectors[strtolower($who->getName())];
+        $windowId = $who->getNetworkSession()->getInvManager()->getWindowId($this);
 
-        $packets = [];
-        $pk = new protocol\ContainerOpenPacket();
-        $pk->type = WindowTypes::CONTAINER;
-        $pk->entityUniqueId = -1;
-        $pk->x = $vec->x;
-        $pk->y = $vec->y;
-        $pk->z = $vec->z;
-        $pk->windowId = $who->getNetworkSession()->getInvManager()->getWindowId($this);
-        $packets[] = $pk;
-
-        $pk2 = new protocol\InventoryContentPacket();
         $typeConverter = TypeConverter::getInstance();
-        $pk2->items = array_map(function(Item $itemStack) use ($typeConverter) : ItemStack{
-            return $typeConverter->coreItemStackToNet($itemStack);
-        }, $this->getContents(true));
-        $pk2->windowId = $pk->windowId;
-        $packets[] = $pk2;
+        $packets = [
+            ContainerOpenPacket::blockInvVec3($windowId, WindowTypes::CONTAINER, $vec),
+            InventoryContentPacket::create($windowId, array_map(function(Item $itemStack) use ($typeConverter) : ItemStack{
+                return $typeConverter->coreItemStackToNet($itemStack);
+            }, $this->getContents(true)))
+        ];
 
         $plugin = InventoryMonitor::getInstance();
         $plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(function() use ($who, $packets) : void{
@@ -330,7 +335,7 @@ class SyncInventory extends BlockInventory{
 
             $nbt = CompoundTag::create()->setString("id", "Chest")->setInt("x", $vec->x + $i)->setInt("y", $vec->y)->setInt("z", $vec->z)->setInt("pairx", $vec->x + (1 - $i))->setInt("pairz", $vec->z)->setString("CustomName", InventoryMonitor::getInstance()->getLanguage()->translate("chest.name", [$player instanceof Player ? $player->getName() : $this->playerName]));
 
-            protocol\BlockActorDataPacket::create($vec->x + $i, $vec->y, $vec->z, new CacheableNbt($nbt));
+            BlockActorDataPacket::create($vec->x + $i, $vec->y, $vec->z, new CacheableNbt($nbt));
             $who->getNetworkSession()->sendDataPacket($pk);
         }
     }
@@ -353,7 +358,7 @@ class SyncInventory extends BlockInventory{
             $tile = $who->getWorld()->getTile($vec);
             if($tile instanceof Spawnable){
 
-                $who->getNetworkSession()->sendDataPacket(protocol\BlockActorDataPacket::create($tile->getPos()->x, $tile->getPos()->y, $tile->getPos()->z, $tile->getSerializedSpawnCompound()));
+                $who->getNetworkSession()->sendDataPacket(BlockActorDataPacket::create($tile->getPos()->x, $tile->getPos()->y, $tile->getPos()->z, $tile->getSerializedSpawnCompound()));
             }
         }
         unset($this->vectors[$key]);

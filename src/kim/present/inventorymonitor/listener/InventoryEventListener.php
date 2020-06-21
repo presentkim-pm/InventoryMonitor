@@ -24,13 +24,19 @@ declare(strict_types=1);
 
 namespace kim\present\inventorymonitor\listener;
 
-use kim\present\inventorymonitor\inventory\group\{ArmorGroup, CursorGroup, InvGroup};
+use kim\present\inventorymonitor\inventory\group\{
+    ArmorGroup,
+    CursorGroup,
+    InvGroup
+};
 use kim\present\inventorymonitor\inventory\SyncInventory;
 use pocketmine\event\inventory\InventoryTransactionEvent;
 use pocketmine\event\Listener;
-use pocketmine\inventory\ArmorInventory;
-use pocketmine\inventory\PlayerCursorInventory;
-use pocketmine\inventory\PlayerInventory;
+use pocketmine\inventory\{
+    ArmorInventory,
+    PlayerCursorInventory,
+    PlayerInventory
+};
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 
 class InventoryEventListener implements Listener{
