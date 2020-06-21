@@ -35,36 +35,36 @@ use pocketmine\inventory\transaction\action\SlotChangeAction;
 
 class InventoryEventListener implements Listener{
 
-	/**
-	 * @priority MONITOR
-	 *
-	 * @param InventoryTransactionEvent $event
-	 */
-	public function onInventoryTransactionEvent(InventoryTransactionEvent $event) : void{
-		foreach($event->getTransaction()->getActions() as $key => $action){
-			if($action instanceof SlotChangeAction){
-				$inventory = $action->getInventory();
-				if($inventory instanceof SyncInventory){
-					if(!$inventory->isValidSlot($action->getSlot())){
-						$event->setCancelled();
-					}
-				}elseif($inventory instanceof PlayerCursorInventory){
-					$syncInventory = SyncInventory::get($inventory->getHolder()->getName());
-					if($syncInventory !== null){
-						$syncInventory->setItem(CursorGroup::START, $action->getTargetItem(), true, false);
-					}
-				}elseif($inventory instanceof ArmorInventory){
-					$syncInventory = SyncInventory::get($inventory->getHolder()->getName());
-					if($syncInventory !== null){
-						$syncInventory->setItem($action->getSlot() + ArmorGroup::START, $action->getTargetItem());
-					}
-				}elseif($inventory instanceof PlayerInventory){
-					$syncInventory = SyncInventory::get($inventory->getHolder()->getName());
-					if($syncInventory !== null){
-						$syncInventory->setItem($action->getSlot() + InvGroup::START, $action->getTargetItem());
-					}
-				}
-			}
-		}
-	}
+    /**
+     * @priority MONITOR
+     *
+     * @param InventoryTransactionEvent $event
+     */
+    public function onInventoryTransactionEvent(InventoryTransactionEvent $event) : void{
+        foreach($event->getTransaction()->getActions() as $key => $action){
+            if($action instanceof SlotChangeAction){
+                $inventory = $action->getInventory();
+                if($inventory instanceof SyncInventory){
+                    if(!$inventory->isValidSlot($action->getSlot())){
+                        $event->setCancelled();
+                    }
+                }elseif($inventory instanceof PlayerCursorInventory){
+                    $syncInventory = SyncInventory::get($inventory->getHolder()->getName());
+                    if($syncInventory !== null){
+                        $syncInventory->setItem(CursorGroup::START, $action->getTargetItem(), true, false);
+                    }
+                }elseif($inventory instanceof ArmorInventory){
+                    $syncInventory = SyncInventory::get($inventory->getHolder()->getName());
+                    if($syncInventory !== null){
+                        $syncInventory->setItem($action->getSlot() + ArmorGroup::START, $action->getTargetItem());
+                    }
+                }elseif($inventory instanceof PlayerInventory){
+                    $syncInventory = SyncInventory::get($inventory->getHolder()->getName());
+                    if($syncInventory !== null){
+                        $syncInventory->setItem($action->getSlot() + InvGroup::START, $action->getTargetItem());
+                    }
+                }
+            }
+        }
+    }
 }

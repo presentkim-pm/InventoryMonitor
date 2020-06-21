@@ -29,16 +29,16 @@ use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerPreLoginEvent;
 
 class PlayerEventListener implements Listener{
-	/**
-	 * @priority LOWEST
-	 *
-	 * @param PlayerPreLoginEvent $event
-	 */
-	public function onPlayerPreLoginEvent(PlayerPreLoginEvent $event){
-		$playerName = strtolower($event->getPlayerInfo()->getUsername());
-		$syncInventory = SyncInventory::get($playerName);
-		if($syncInventory !== null){
-			$syncInventory->save();
-		}
-	}
+    /**
+     * @priority LOWEST
+     *
+     * @param PlayerPreLoginEvent $event
+     */
+    public function onPlayerPreLoginEvent(PlayerPreLoginEvent $event){
+        $playerName = strtolower($event->getPlayerInfo()->getUsername());
+        $syncInventory = SyncInventory::get($playerName);
+        if($syncInventory !== null){
+            $syncInventory->save();
+        }
+    }
 }
