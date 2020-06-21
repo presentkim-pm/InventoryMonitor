@@ -204,10 +204,9 @@ class SyncInventory extends BlockInventory{
     /**
      * @param int $index
      * @param Item $item
-     * @param bool $send
      * @param bool $sync
      */
-    public function setItem(int $index, Item $item, bool $send = true, $sync = true) : void{
+    public function setItem(int $index, Item $item, $sync = true) : void{
         if($sync){
             $slotGroup = $this->getSlotGroup($index);
             if($slotGroup instanceof SlotGroup){

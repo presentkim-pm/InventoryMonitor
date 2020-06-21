@@ -57,7 +57,7 @@ class InventoryEventListener implements Listener{
                 }elseif($inventory instanceof PlayerCursorInventory){
                     $syncInventory = SyncInventory::get($inventory->getHolder()->getName());
                     if($syncInventory !== null){
-                        $syncInventory->setItem(CursorGroup::START, $action->getTargetItem(), true, false);
+                        $syncInventory->setItem(CursorGroup::START, $action->getTargetItem(), false);
                     }
                 }elseif($inventory instanceof ArmorInventory){
                     $syncInventory = SyncInventory::get($inventory->getHolder()->getName());
