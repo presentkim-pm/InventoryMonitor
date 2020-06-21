@@ -186,8 +186,6 @@ class SyncInventory extends BlockInventory{
      * @param Item $item
      * @param bool $send
      * @param bool $sync
-     *
-     * @return bool
      */
     public function setItem(int $index, Item $item, bool $send = true, $sync = true) : void{
         if($sync){
