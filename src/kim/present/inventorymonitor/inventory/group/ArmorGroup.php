@@ -38,7 +38,7 @@ class ArmorGroup extends SlotGroup{
     public function onUpdate(int $index, Item $item) : void{
         $player = Server::getInstance()->getPlayerExact($this->syncInventory->getPlayerName());
         if($player !== null){
-            $player->getArmorInventory()->setItem($index, $item, true);
+            $player->getArmorInventory()->setItem($index, $item);
         }
     }
 }

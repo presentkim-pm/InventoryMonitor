@@ -194,7 +194,7 @@ class SyncInventory extends BlockInventory{
                 $slotGroup->setItem($index, $item);
             }
         }
-        parent::setItem($index, $item, $send);
+        parent::setItem($index, $item);
     }
 
     /**

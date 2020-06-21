@@ -38,7 +38,7 @@ class InvGroup extends SlotGroup{
     public function onUpdate(int $index, Item $item) : void{
         $player = Server::getInstance()->getPlayerExact($this->syncInventory->getPlayerName());
         if($player !== null){
-            $player->getInventory()->setItem($index, $item, true);
+            $player->getInventory()->setItem($index, $item);
         }
     }
 }

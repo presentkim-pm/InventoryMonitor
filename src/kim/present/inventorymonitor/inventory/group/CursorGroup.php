@@ -38,7 +38,7 @@ class CursorGroup extends SlotGroup{
     public function onUpdate(int $index, Item $item) : void{
         $player = Server::getInstance()->getPlayerExact($this->syncInventory->getPlayerName());
         if($player !== null){
-            $player->getCursorInventory()->setItem(0, $item, true);
+            $player->getCursorInventory()->setItem(0, $item);
         }
     }
 }
