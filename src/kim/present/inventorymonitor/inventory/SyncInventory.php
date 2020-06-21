@@ -30,7 +30,9 @@ use pocketmine\block\inventory\BlockInventory;
 use pocketmine\item\ItemFactory;
 use pocketmine\nbt\TreeRoot;
 use pocketmine\network\mcpe\convert\RuntimeBlockMapping;
+use pocketmine\network\mcpe\convert\TypeConverter;
 use pocketmine\network\mcpe\protocol\types\CacheableNbt;
+use pocketmine\network\mcpe\protocol\types\inventory\ItemStack;
 use pocketmine\network\mcpe\protocol\UpdateBlockPacket;
 use pocketmine\network\mcpe\protocol\serializer\NetworkNbtSerializer;
 use pocketmine\player\Player;
@@ -218,7 +220,10 @@ class SyncInventory extends BlockInventory{
         $packets[] = $pk;
 
         $pk2 = new protocol\InventoryContentPacket();
-        $pk2->items = $this->getContents(true);
+        $typeConverter = TypeConverter::getInstance();
+        $pk2->items = array_map(function(Item $itemStack) use ($typeConverter) : ItemStack{
+            return $typeConverter->coreItemStackToNet($itemStack);
+        }, $this->getContents(true));
         $pk2->windowId = $pk->windowId;
         $packets[] = $pk2;
 
