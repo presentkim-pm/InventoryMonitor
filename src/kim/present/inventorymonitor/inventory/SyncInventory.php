@@ -335,8 +335,7 @@ class SyncInventory extends BlockInventory{
 
             $nbt = CompoundTag::create()->setString("id", "Chest")->setInt("x", $vec->x + $i)->setInt("y", $vec->y)->setInt("z", $vec->z)->setInt("pairx", $vec->x + (1 - $i))->setInt("pairz", $vec->z)->setString("CustomName", InventoryMonitor::getInstance()->getLanguage()->translate("chest.name", [$player instanceof Player ? $player->getName() : $this->playerName]));
 
-            BlockActorDataPacket::create($vec->x + $i, $vec->y, $vec->z, new CacheableNbt($nbt));
-            $who->getNetworkSession()->sendDataPacket($pk);
+            $who->getNetworkSession()->sendDataPacket(BlockActorDataPacket::create($vec->x + $i, $vec->y, $vec->z, new CacheableNbt($nbt)));
         }
     }
 
