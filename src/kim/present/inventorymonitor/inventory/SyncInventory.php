@@ -222,7 +222,7 @@ class SyncInventory extends BlockInventory{
         $packets[] = $pk2;
 
         $plugin = InventoryMonitor::getInstance();
-        $plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(function(int $currentTick) use ($who, $packets) : void{
+        $plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(function() use ($who, $packets) : void{
             foreach($packets as $key => $packet){
                 $who->getNetworkSession()->sendDataPacket($packet);
             }
