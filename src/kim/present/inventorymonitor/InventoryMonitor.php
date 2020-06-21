@@ -82,7 +82,7 @@ class InventoryMonitor extends PluginBase{
         ]));
 
         //Register main command
-        $this->command = new PluginCommand($config->getNested("command.name"), $this);
+        $this->command = new PluginCommand($config->getNested("command.name"), $this, $this);
         $this->command->setPermission("inventorymonitor.cmd");
         $this->command->setAliases($config->getNested("command.aliases"));
         $this->command->setUsage($this->language->translate("commands.inventorymonitor.usage"));
