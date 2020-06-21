@@ -26,13 +26,14 @@ namespace kim\present\inventorymonitor\inventory;
 
 use kim\present\inventorymonitor\inventory\group\{ArmorGroup, CursorGroup, InvGroup, SlotGroup};
 use kim\present\inventorymonitor\InventoryMonitor;
+use pocketmine\block\inventory\BlockInventory;
 use pocketmine\item\ItemFactory;
 use pocketmine\nbt\TreeRoot;
-use pocketmine\network\mcpe\serializer\NetworkNbtSerializer;
+use pocketmine\network\mcpe\protocol\serializer\NetworkNbtSerializer;
 use pocketmine\player\Player;
 use pocketmine\Server;
 use pocketmine\block\BlockLegacyIds;
-use pocketmine\inventory\{BaseInventory, BlockInventory};
+use pocketmine\inventory\BaseInventory;
 use pocketmine\item\Item;
 use pocketmine\math\Vector3;
 use pocketmine\nbt\NBT;
