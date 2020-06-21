@@ -142,7 +142,7 @@ class SyncInventory extends BlockInventory{
         $this->groups[] = new ArmorGroup($this);
         $this->groups[] = new CursorGroup($this);
 
-        $borderItem = ItemFactory::get(-161); //barrier
+        $borderItem = ItemFactory::getInstance()->get(-161); //barrier
         $borderItem->setCustomName("");
         for($i = 0; $i < 54; ++$i){
             if(!$this->isValidSlot($i)){
