@@ -104,6 +104,7 @@ class SyncInventory extends BlockInventory{
                     $items[$i + 46] = $item;
                 }
             }
+            return new SyncInventory($playerName, $items);
         }elseif(!$includeOffline){
             return null;
         }
