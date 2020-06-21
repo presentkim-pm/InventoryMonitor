@@ -29,6 +29,8 @@ use kim\present\inventorymonitor\InventoryMonitor;
 use pocketmine\block\inventory\BlockInventory;
 use pocketmine\item\ItemFactory;
 use pocketmine\nbt\TreeRoot;
+use pocketmine\network\mcpe\convert\RuntimeBlockMapping;
+use pocketmine\network\mcpe\protocol\UpdateBlockPacket;
 use pocketmine\network\mcpe\protocol\serializer\NetworkNbtSerializer;
 use pocketmine\player\Player;
 use pocketmine\Server;
@@ -74,7 +76,6 @@ class SyncInventory extends BlockInventory{
         $player = $server->getPlayerExact($playerName);
         if($player instanceof Player){
             $inventory = $player->getInventory();
-            /** @var Item[] $items */
             $items = $inventory->getContents(true);
 
             $armorInventory = $player->getArmorInventory();
@@ -317,11 +318,7 @@ class SyncInventory extends BlockInventory{
         $vec = $this->vectors[$key];
 
         for($i = 0; $i < 2; $i++){
-            $pk = new protocol\UpdateBlockPacket();
-            $pk->x = $vec->x + $i;
-            $pk->y = $vec->y;
-            $pk->z = $vec->z;
-            $pk->blockRuntimeId = protocol\types\RuntimeBlockMapping::toStaticRuntimeId(BlockLegacyIds::CHEST);
+            $pk = UpdateBlockPacket::create($vec->x + $i, $vec->y, $vec->z, RuntimeBlockMapping::getInstance()->toRuntimeId(BlockLegacyIds::CHEST));
             $pk->flags = 0;
             $who->getNetworkSession()->sendDataPacket($pk);
 
