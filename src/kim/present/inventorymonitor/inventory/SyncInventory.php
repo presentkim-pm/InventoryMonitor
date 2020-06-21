@@ -30,6 +30,7 @@ use pocketmine\block\inventory\BlockInventory;
 use pocketmine\item\ItemFactory;
 use pocketmine\nbt\TreeRoot;
 use pocketmine\network\mcpe\convert\RuntimeBlockMapping;
+use pocketmine\network\mcpe\protocol\types\CacheableNbt;
 use pocketmine\network\mcpe\protocol\UpdateBlockPacket;
 use pocketmine\network\mcpe\protocol\serializer\NetworkNbtSerializer;
 use pocketmine\player\Player;
@@ -324,11 +325,7 @@ class SyncInventory extends BlockInventory{
 
             $nbt = CompoundTag::create()->setString("id", "Chest")->setInt("x", $vec->x + $i)->setInt("y", $vec->y)->setInt("z", $vec->z)->setInt("pairx", $vec->x + (1 - $i))->setInt("pairz", $vec->z)->setString("CustomName", InventoryMonitor::getInstance()->getLanguage()->translate("chest.name", [$player instanceof Player ? $player->getName() : $this->playerName]));
 
-            $pk = new protocol\BlockActorDataPacket();
-            $pk->x = $vec->x + $i;
-            $pk->y = $vec->y;
-            $pk->z = $vec->z;
-            $pk->namedtag = (new NetworkNbtSerializer())->write(new TreeRoot($nbt));
+            protocol\BlockActorDataPacket::create($vec->x + $i, $vec->y, $vec->z, new CacheableNbt($nbt));
             $who->getNetworkSession()->sendDataPacket($pk);
         }
     }
