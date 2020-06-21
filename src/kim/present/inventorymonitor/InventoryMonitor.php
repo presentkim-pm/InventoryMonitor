@@ -47,9 +47,6 @@ class InventoryMonitor extends PluginBase{
     /** @var PluginLang */
     private $language;
 
-    /** @var PluginCommand */
-    private $command;
-
     /**
      * Called when the plugin is loaded, before calling onEnable()
      */
@@ -82,12 +79,12 @@ class InventoryMonitor extends PluginBase{
         ]));
 
         //Register main command
-        $this->command = new PluginCommand($config->getNested("command.name"), $this, $this);
-        $this->command->setPermission("inventorymonitor.cmd");
-        $this->command->setAliases($config->getNested("command.aliases"));
-        $this->command->setUsage($this->language->translate("commands.inventorymonitor.usage"));
-        $this->command->setDescription($this->language->translate("commands.inventorymonitor.description"));
-        $this->getServer()->getCommandMap()->register($this->getName(), $this->command);
+        $command = new PluginCommand($config->getNested("command.name"), $this, $this);
+        $command->setPermission("inventorymonitor.cmd");
+        $command->setAliases($config->getNested("command.aliases"));
+        $command->setUsage($this->language->translate("commands.inventorymonitor.usage"));
+        $command->setDescription($this->language->translate("commands.inventorymonitor.description"));
+        $this->getServer()->getCommandMap()->register($this->getName(), $command);
 
         //Load permission's default value from config
         $permissions = PermissionManager::getInstance()->getPermissions();
