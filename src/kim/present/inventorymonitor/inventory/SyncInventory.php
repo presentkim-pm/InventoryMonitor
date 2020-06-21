@@ -31,10 +31,24 @@ use kim\present\inventorymonitor\inventory\group\{
     SlotGroup
 };
 use kim\present\inventorymonitor\InventoryMonitor;
+use pocketmine\block\BlockLegacyIds;
 use pocketmine\block\inventory\BlockInventory;
 use pocketmine\block\tile\Spawnable;
-use pocketmine\network\mcpe\convert\RuntimeBlockMapping;
-use pocketmine\network\mcpe\convert\TypeConverter;
+use pocketmine\inventory\BaseInventory;
+use pocketmine\item\{
+    Item,
+    ItemFactory
+};
+use pocketmine\math\Vector3;
+use pocketmine\nbt\NBT;
+use pocketmine\nbt\tag\{
+    CompoundTag,
+    ListTag
+};
+use pocketmine\network\mcpe\convert\{
+    RuntimeBlockMapping,
+    TypeConverter
+};
 use pocketmine\network\mcpe\protocol\{
     BlockActorDataPacket,
     ContainerOpenPacket,
@@ -47,21 +61,9 @@ use pocketmine\network\mcpe\protocol\types\inventory\{
     WindowTypes
 };
 use pocketmine\player\Player;
-use pocketmine\block\BlockLegacyIds;
-use pocketmine\inventory\BaseInventory;
-use pocketmine\math\Vector3;
-use pocketmine\nbt\NBT;
-use pocketmine\nbt\tag\{
-    CompoundTag,
-    ListTag
-};
 use pocketmine\scheduler\ClosureTask;
-use pocketmine\world\Position;
-use pocketmine\item\{
-    Item,
-    ItemFactory
-};
 use pocketmine\Server;
+use pocketmine\world\Position;
 
 class SyncInventory extends BlockInventory{
     /** @var SyncInventory[] */
