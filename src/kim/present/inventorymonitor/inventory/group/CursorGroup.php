@@ -32,7 +32,7 @@ class CursorGroup extends SlotGroup{
     public const END = 52;
 
     /**
-     * @param int $index
+     * @param int  $index
      * @param Item $item
      */
     public function onUpdate(int $index, Item $item) : void{

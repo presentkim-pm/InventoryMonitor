@@ -46,7 +46,7 @@ class PluginLang{
      * PluginLang constructor.
      *
      * @param PluginBase $plugin
-     * @param string $lang
+     * @param string     $lang
      */
     public function __construct(PluginBase $plugin, string $lang){
         $this->langName = strtolower($lang);
@@ -82,7 +82,7 @@ class PluginLang{
     }
 
     /**
-     * @param string $id
+     * @param string   $id
      * @param string[] $params
      *
      * @return string
@@ -90,7 +90,7 @@ class PluginLang{
     public function translate(string $id, array $params = []) : string{
         $str = $this->lang[$id] ?? $this->fallbackLang[$id] ?? $id;
         foreach($params as $i => $param){
-            $str = str_replace("{%$i}", (string)$param, $str);
+            $str = str_replace("{%$i}", (string) $param, $str);
         }
         return $str;
     }

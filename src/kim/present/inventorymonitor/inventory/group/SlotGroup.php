@@ -53,7 +53,7 @@ abstract class SlotGroup{
     }
 
     /**
-     * @param int $slot
+     * @param int  $slot
      * @param Item $item
      */
     public function setItem(int $slot, Item $item) : void{
@@ -61,7 +61,7 @@ abstract class SlotGroup{
     }
 
     /**
-     * @param int $index
+     * @param int  $index
      * @param Item $item
      */
     public abstract function onUpdate(int $index, Item $item) : void;

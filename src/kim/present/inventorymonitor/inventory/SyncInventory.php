@@ -24,42 +24,30 @@ declare(strict_types=1);
 
 namespace kim\present\inventorymonitor\inventory;
 
-use kim\present\inventorymonitor\inventory\group\{
-    ArmorGroup,
-    CursorGroup,
-    InvGroup,
-    SlotGroup
-};
+use kim\present\inventorymonitor\inventory\group\ArmorGroup;
+use kim\present\inventorymonitor\inventory\group\CursorGroup;
+use kim\present\inventorymonitor\inventory\group\InvGroup;
+use kim\present\inventorymonitor\inventory\group\SlotGroup;
 use kim\present\inventorymonitor\InventoryMonitor;
 use pocketmine\block\BlockLegacyIds;
 use pocketmine\block\inventory\BlockInventory;
 use pocketmine\block\tile\Spawnable;
 use pocketmine\inventory\BaseInventory;
-use pocketmine\item\{
-    Item,
-    ItemFactory
-};
+use pocketmine\item\Item;
+use pocketmine\item\ItemFactory;
 use pocketmine\math\Vector3;
 use pocketmine\nbt\NBT;
-use pocketmine\nbt\tag\{
-    CompoundTag,
-    ListTag
-};
-use pocketmine\network\mcpe\convert\{
-    RuntimeBlockMapping,
-    TypeConverter
-};
-use pocketmine\network\mcpe\protocol\{
-    BlockActorDataPacket,
-    ContainerOpenPacket,
-    InventoryContentPacket,
-    UpdateBlockPacket
-};
+use pocketmine\nbt\tag\CompoundTag;
+use pocketmine\nbt\tag\ListTag;
+use pocketmine\network\mcpe\convert\RuntimeBlockMapping;
+use pocketmine\network\mcpe\convert\TypeConverter;
+use pocketmine\network\mcpe\protocol\BlockActorDataPacket;
+use pocketmine\network\mcpe\protocol\ContainerOpenPacket;
+use pocketmine\network\mcpe\protocol\InventoryContentPacket;
 use pocketmine\network\mcpe\protocol\types\CacheableNbt;
-use pocketmine\network\mcpe\protocol\types\inventory\{
-    ItemStack,
-    WindowTypes
-};
+use pocketmine\network\mcpe\protocol\types\inventory\ItemStack;
+use pocketmine\network\mcpe\protocol\types\inventory\WindowTypes;
+use pocketmine\network\mcpe\protocol\UpdateBlockPacket;
 use pocketmine\player\Player;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\Server;
@@ -78,7 +66,7 @@ class SyncInventory extends BlockInventory{
 
     /**
      * @param string $playerName
-     * @param bool $includeOffline = true
+     * @param bool   $includeOffline = true
      *
      * @return null|SyncInventory
      */
@@ -202,7 +190,7 @@ class SyncInventory extends BlockInventory{
     }
 
     /**
-     * @param int $index
+     * @param int  $index
      * @param Item $item
      * @param bool $sync
      */
@@ -239,7 +227,7 @@ class SyncInventory extends BlockInventory{
             foreach($packets as $key => $packet){
                 $who->getNetworkSession()->sendDataPacket($packet);
             }
-        }), (int)$plugin->getConfig()->getNested("settings.inventory-display-delay", 10));
+        }), (int) $plugin->getConfig()->getNested("settings.inventory-display-delay", 10));
     }
 
     /**
@@ -357,7 +345,6 @@ class SyncInventory extends BlockInventory{
 
             $tile = $who->getWorld()->getTile($vec);
             if($tile instanceof Spawnable){
-
                 $who->getNetworkSession()->sendDataPacket(BlockActorDataPacket::create($tile->getPos()->x, $tile->getPos()->y, $tile->getPos()->z, $tile->getSerializedSpawnCompound()));
             }
         }

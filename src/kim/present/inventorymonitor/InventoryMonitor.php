@@ -26,20 +26,14 @@ namespace kim\present\inventorymonitor;
 
 use kim\present\inventorymonitor\inventory\SyncInventory;
 use kim\present\inventorymonitor\lang\PluginLang;
-use kim\present\inventorymonitor\listener\{
-    InventoryEventListener,
-    PlayerEventListener
-};
+use kim\present\inventorymonitor\listener\InventoryEventListener;
+use kim\present\inventorymonitor\listener\PlayerEventListener;
 use kim\present\inventorymonitor\task\CheckUpdateAsyncTask;
-use pocketmine\command\{
-    Command,
-    CommandSender,
-    PluginCommand
-};
-use pocketmine\permission\{
-    PermissionManager,
-    PermissionParser
-};
+use pocketmine\command\Command;
+use pocketmine\command\CommandSender;
+use pocketmine\command\PluginCommand;
+use pocketmine\permission\PermissionManager;
+use pocketmine\permission\PermissionParser;
 use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
 
@@ -120,9 +114,9 @@ class InventoryMonitor extends PluginBase{
 
     /**
      * @param CommandSender $sender
-     * @param Command $command
-     * @param string $label
-     * @param string[] $args
+     * @param Command       $command
+     * @param string        $label
+     * @param string[]      $args
      *
      * @return bool
      */
