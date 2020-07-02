@@ -22,23 +22,23 @@
 
 declare(strict_types=1);
 
-namespace kim\present\inventorymonitor\inventory\group;
+namespace blugin\inventorymonitor\listener;
 
-use pocketmine\item\Item;
-use pocketmine\Server;
+use blugin\inventorymonitor\inventory\SyncInventory;
+use pocketmine\event\Listener;
+use pocketmine\event\player\PlayerPreLoginEvent;
 
-class CursorGroup extends SlotGroup{
-    public const START = 52;
-    public const END = 52;
-
+class PlayerEventListener implements Listener{
     /**
-     * @param int  $index
-     * @param Item $item
+     * @priority LOWEST
+     *
+     * @param PlayerPreLoginEvent $event
      */
-    public function onUpdate(int $index, Item $item) : void{
-        $player = Server::getInstance()->getPlayerExact($this->syncInventory->getPlayerName());
-        if($player !== null){
-            $player->getCursorInventory()->setItem(0, $item);
+    public function onPlayerPreLoginEvent(PlayerPreLoginEvent $event){
+        $playerName = strtolower($event->getPlayerInfo()->getUsername());
+        $syncInventory = SyncInventory::get($playerName);
+        if($syncInventory !== null){
+            $syncInventory->save();
         }
     }
 }

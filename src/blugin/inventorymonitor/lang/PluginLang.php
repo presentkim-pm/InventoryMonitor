@@ -22,7 +22,7 @@
 
 declare(strict_types=1);
 
-namespace kim\present\inventorymonitor\lang;
+namespace blugin\inventorymonitor\lang;
 
 use pocketmine\plugin\PluginBase;
 

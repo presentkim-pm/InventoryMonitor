@@ -22,9 +22,9 @@
 
 declare(strict_types=1);
 
-namespace kim\present\inventorymonitor\task;
+namespace blugin\inventorymonitor\task;
 
-use kim\present\inventorymonitor\InventoryMonitor;
+use blugin\inventorymonitor\InventoryMonitor;
 use pocketmine\scheduler\AsyncTask;
 
 class ShortenDownloadURLAsyncTask extends AsyncTask{

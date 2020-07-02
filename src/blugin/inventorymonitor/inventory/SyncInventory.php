@@ -22,13 +22,13 @@
 
 declare(strict_types=1);
 
-namespace kim\present\inventorymonitor\inventory;
+namespace blugin\inventorymonitor\inventory;
 
-use kim\present\inventorymonitor\inventory\group\ArmorGroup;
-use kim\present\inventorymonitor\inventory\group\CursorGroup;
-use kim\present\inventorymonitor\inventory\group\InvGroup;
-use kim\present\inventorymonitor\inventory\group\SlotGroup;
-use kim\present\inventorymonitor\InventoryMonitor;
+use blugin\inventorymonitor\inventory\group\ArmorGroup;
+use blugin\inventorymonitor\inventory\group\CursorGroup;
+use blugin\inventorymonitor\inventory\group\InvGroup;
+use blugin\inventorymonitor\inventory\group\SlotGroup;
+use blugin\inventorymonitor\InventoryMonitor;
 use pocketmine\block\BlockLegacyIds;
 use pocketmine\block\inventory\BlockInventory;
 use pocketmine\block\tile\Spawnable;

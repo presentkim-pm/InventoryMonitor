@@ -22,13 +22,13 @@
 
 declare(strict_types=1);
 
-namespace kim\present\inventorymonitor;
+namespace blugin\inventorymonitor;
 
-use kim\present\inventorymonitor\inventory\SyncInventory;
-use kim\present\inventorymonitor\lang\PluginLang;
-use kim\present\inventorymonitor\listener\InventoryEventListener;
-use kim\present\inventorymonitor\listener\PlayerEventListener;
-use kim\present\inventorymonitor\task\CheckUpdateAsyncTask;
+use blugin\inventorymonitor\inventory\SyncInventory;
+use blugin\inventorymonitor\lang\PluginLang;
+use blugin\inventorymonitor\listener\InventoryEventListener;
+use blugin\inventorymonitor\listener\PlayerEventListener;
+use blugin\inventorymonitor\task\CheckUpdateAsyncTask;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\command\PluginCommand;
