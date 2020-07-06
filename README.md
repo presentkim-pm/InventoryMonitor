@@ -1,10 +1,6 @@
 # <img src="https://rawgit.com/PresentKim/SVG-files/master/plugin-icons/inventorymonitor.svg" height="50" width="50"> InventoryMonitor  
 __A plugin for [PMMP](https://pmmp.io) :: Monitoring player inventory!__  
   
-[![license](https://img.shields.io/github/license/Blugin/InventoryMonitor.svg?label=License)](LICENSE)
-[![release](https://img.shields.io/github/release/Blugin/InventoryMonitor.svg?label=Release)](../../releases/latest)
-[![download](https://img.shields.io/github/downloads/Blugin/InventoryMonitor/total.svg?label=Download)](../../releases/latest)
- 
 ## What is this?   
 Inventory monitor is plugin that monitoring player inventory
   
