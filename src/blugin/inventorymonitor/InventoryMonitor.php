@@ -28,7 +28,6 @@ use blugin\inventorymonitor\inventory\SyncInventory;
 use blugin\inventorymonitor\lang\PluginLang;
 use blugin\inventorymonitor\listener\InventoryEventListener;
 use blugin\inventorymonitor\listener\PlayerEventListener;
-use blugin\inventorymonitor\task\CheckUpdateAsyncTask;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\command\PluginCommand;
@@ -69,11 +68,6 @@ class InventoryMonitor extends PluginBase{
 
         //Load config file
         $config = $this->getConfig();
-
-        //Check latest version
-        if($config->getNested("settings.update-check", false)){
-            $this->getServer()->getAsyncPool()->submitTask(new CheckUpdateAsyncTask());
-        }
 
         //Load language file
         $this->language = new PluginLang($this, $config->getNested("settings.language"));
