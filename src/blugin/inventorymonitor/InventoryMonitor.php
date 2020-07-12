@@ -35,17 +35,10 @@ use pocketmine\permission\PermissionManager;
 use pocketmine\permission\PermissionParser;
 use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
+use pocketmine\utils\SingletonTrait;
 
 class InventoryMonitor extends PluginBase{
-    /** @var InventoryMonitor */
-    private static $instance;
-
-    /**
-     * @return InventoryMonitor
-     */
-    public static function getInstance() : InventoryMonitor{
-        return self::$instance;
-    }
+    use SingletonTrait;
 
     /** @var PluginLang */
     private $language;
@@ -54,7 +47,7 @@ class InventoryMonitor extends PluginBase{
      * Called when the plugin is loaded, before calling onEnable()
      */
     public function onLoad() : void{
-        self::$instance = $this;
+        self::setInstance($this);
     }
 
     /**
