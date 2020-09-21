@@ -6,6 +6,13 @@ api: [3.0.0]
 authors: ['Blugin-team', 'PresentKim']
 description: 'Real-time responsive player inventory viewer'
 
+commands:
+  inventorymonitor:
+    description: Real-time responsive player inventory viewer
+    usage: /inventorymonitor
+    aliases: [im]
+    permission: inventorymonitor.cmd
+
 permissions:
   inventorymonitor.cmd:
     description: Open player inventory
