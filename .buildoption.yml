@@ -1,0 +1,5 @@
+---
+virions:
+- src: Muqsit/InvMenu/InvMenu
+  version: 4.0.0
+...
