@@ -2,4 +2,6 @@
 virions:
 - src: Muqsit/InvMenu/InvMenu
   version: 4.0.0
+- src: Blugin/virions/SelfFactoryTrait
+  version: ^1.0.0
 ...
