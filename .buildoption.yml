@@ -6,4 +6,6 @@ virions:
   version: ^1.0.0
 - src: Blugin/virions/ResponsiveInvMenu
   version: ^1.0.0
+- src: Blugin/libcommand/libcommand
+  version: ^1.3.4
 ...
