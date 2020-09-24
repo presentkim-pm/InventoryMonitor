@@ -27,10 +27,16 @@ declare(strict_types=1);
 
 namespace blugin\inventorymonitor;
 
+use blugin\lib\command\BaseCommandTrait;
+use blugin\lib\command\listener\AvaliableCommandListener;
+use blugin\lib\command\listener\EnumUpdateListener;
+use blugin\lib\command\overload\Overload;
+use blugin\lib\command\parameter\defaults\PlayerParameter;
 use blugin\lib\invmenu\responsive\ResponsiveInvMenu;
 use blugin\lib\invmenu\responsive\ResponsiveInvMenuInventory;
 use blugin\lib\invmenu\responsive\slot\SyncSlot;
-use pocketmine\command\Command;
+use blugin\lib\translator\traits\TranslatorHolderTrait;
+use blugin\lib\translator\TranslatorHolder;
 use pocketmine\command\CommandSender;
 use pocketmine\event\inventory\InventoryTransactionEvent;
 use pocketmine\event\Listener;
@@ -44,33 +50,37 @@ use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\scheduler\ClosureTask;
 
-class InventoryMonitor extends PluginBase implements Listener{
+class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
+    use TranslatorHolderTrait, BaseCommandTrait;
+
+    public function onLoad(){
+        $this->loadLanguage();
+        $this->getBaseCommand();
+    }
+
     public function onEnable() : void{
         ResponsiveInvMenu::register($this);
+        AvaliableCommandListener::register($this);
+        EnumUpdateListener::register($this);
+
+        //Register main command
+        $overload = (new Overload($command = $this->getBaseCommand()))
+            ->addParamater((new PlayerParameter("player"))->setIncludeOffline(true)->setExact(false))
+            ->setHandler(function(CommandSender $sender, array $args, Overload $overload) : bool{
+                if(!$sender instanceof Player){
+                    $overload->sendMessage($sender, "commands.generic.onlyPlayer");
+                    return true;
+                }
+                MonitorInstance::load($args["player"])->getMenu()->send($sender);
+                return true;
+            });
+        $this->getServer()->getCommandMap()->register($this->getName(), $command->addOverload($overload));
 
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
     }
 
-    /** @param string[] $args */
-    public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
-        if(!$sender instanceof Player){
-            $sender->sendMessage("Run the command only in-game");
-            return true;
-        }
-
-        if(!isset($args[0]))
-            return false;
-
-        $monitor = MonitorInstance::load((string) $args[0]);
-        if($monitor === null){
-            $sender->sendMessage("$args[0] is invalid player name");
-            return true;
-        }
-
-        //Show menu to player
-        $menu = $monitor->getMenu();
-        $menu->send($sender);
-        return true;
+    public function onDisable() : void{
+        $this->getServer()->getCommandMap()->unregister($this->getBaseCommand());
     }
 
     /** @notHandler */
