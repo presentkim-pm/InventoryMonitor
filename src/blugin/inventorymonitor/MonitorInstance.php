@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace blugin\inventorymonitor;
 
 use blugin\inventorymonitor\inventory\OfflinePlayerInventory;
+use blugin\inventorymonitor\inventory\slot\OneWaySyncSlot;
 use blugin\lib\invmenu\responsive\ResponsiveInvMenu;
 use blugin\lib\invmenu\responsive\ResponsiveInvMenuInventory;
 use blugin\lib\invmenu\responsive\slot\ImmutableSlot;
@@ -55,13 +56,17 @@ class MonitorInstance{
     /** @var BaseInventory */
     private $armorInventory;
 
+    /** @var BaseInventory|null */
+    private $cursorInventory;
+
     /** @var InvMenu */
     private $menu;
 
-    public function __construct(string $playerName, BaseInventory $inventory, BaseInventory $armorInventory){
+    public function __construct(string $playerName, BaseInventory $inventory, BaseInventory $armorInventory, ?BaseInventory $cursorInventory = null){
         $this->playerName = strtolower($playerName);
         $this->inventory = $inventory;
         $this->armorInventory = $armorInventory;
+        $this->cursorInventory = $cursorInventory;
 
         //Create inv menu
         $this->menu = InvMenu::create(ResponsiveInvMenu::TYPE_DOUBLE_CHEST);
@@ -85,6 +90,10 @@ class MonitorInstance{
         //Synchronize with armor inventory
         for($i = 46; $i < 50; ++$i){
             $responeInv->setSlot($i, new SyncSlot($armorInventory, $i % 46));
+        }
+
+        if($cursorInventory !== null){
+            $responeInv->setSlot(53, new OneWaySyncSlot($cursorInventory, 0));
         }
 
         //Binding responsive inventory to inv menu
@@ -137,7 +146,7 @@ class MonitorInstance{
         $server = Server::getInstance();
         $player = $server->getPlayerExact($playerName);
         if($player instanceof Player){
-            return self::$instances[$playerName] = new MonitorInstance($playerName, $player->getInventory(), $player->getArmorInventory());
+            return self::$instances[$playerName] = new MonitorInstance($playerName, $player->getInventory(), $player->getArmorInventory(), $player->getCursorInventory());
         }
 
         if(!$includeOffline || !file_exists($server->getDataPath() . "players/{$playerName}.dat"))
@@ -165,6 +174,10 @@ class MonitorInstance{
 
     public function getArmorInventory() : BaseInventory{
         return $this->armorInventory;
+    }
+
+    public function getCursorInventory() : BaseInventory{
+        return $this->cursorInventory;
     }
 
     public function getMenu() : InvMenu{
