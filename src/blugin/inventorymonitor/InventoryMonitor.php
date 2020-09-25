@@ -71,14 +71,15 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
         $overload = (new Overload($command = $this->getBaseCommand()))
             ->addParamater((new PlayerParameter("player"))->setIncludeOffline(true)->setExact(false))
             ->setHandler(function(CommandSender $sender, array $args, Overload $overload) : bool{
+                $command = $overload->getBaseCommand();
                 if(!$sender instanceof Player){
-                    $overload->sendMessage($sender, "commands.generic.onlyPlayer");
+                    $command->sendMessage($sender, "commands.generic.onlyPlayer");
                     return true;
                 }
 
                 $menu = MonitorInstance::load($args["player"])->getMenu();
                 $online = Server::getInstance()->getPlayerExact($args["player"]) !== null;
-                $menu->setName(InventoryMonitor::getInstance()->getTranslator()->translateTo("chest.name." . ($online ? "online" : "offline"), [$args["player"]], $sender));
+                $menu->setName($command->getMessage($sender, "chest.name." . ($online ? "online" : "offline"), [$args["player"]]));
                 $menu->send($sender);
                 return true;
             });
