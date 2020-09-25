@@ -32,7 +32,7 @@ use blugin\lib\command\listener\AvaliableCommandListener;
 use blugin\lib\command\listener\EnumUpdateListener;
 use blugin\lib\command\overload\Overload;
 use blugin\lib\command\parameter\defaults\PlayerParameter;
-use blugin\lib\invmenu\responsive\ResponsiveInvMenu;
+use blugin\lib\invmenu\responsive\ResponsiveInvMenuHandler;
 use blugin\lib\invmenu\responsive\ResponsiveInvMenuInventory;
 use blugin\lib\invmenu\responsive\slot\SyncSlot;
 use blugin\lib\translator\traits\TranslatorHolderTrait;
@@ -61,7 +61,7 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
     }
 
     public function onEnable() : void{
-        ResponsiveInvMenu::register($this);
+        ResponsiveInvMenuHandler::register($this);
         AvaliableCommandListener::register($this);
         EnumUpdateListener::register($this);
 

@@ -28,10 +28,10 @@ declare(strict_types=1);
 namespace blugin\inventorymonitor;
 
 use blugin\inventorymonitor\inventory\OfflinePlayerInventory;
-use blugin\inventorymonitor\inventory\slot\OneWaySyncSlot;
-use blugin\lib\invmenu\responsive\ResponsiveInvMenu;
+use blugin\lib\invmenu\responsive\ResponsiveInvMenuHandler;
 use blugin\lib\invmenu\responsive\ResponsiveInvMenuInventory;
 use blugin\lib\invmenu\responsive\slot\ImmutableSlot;
+use blugin\lib\invmenu\responsive\slot\OneWaySyncSlot;
 use blugin\lib\invmenu\responsive\slot\SyncSlot;
 use blugin\traits\selffactory\SelfFactoryTrait;
 use muqsit\invmenu\InvMenu;
@@ -69,7 +69,7 @@ class MonitorInstance{
         $this->cursorInventory = $cursorInventory;
 
         //Create inv menu
-        $this->menu = InvMenu::create(ResponsiveInvMenu::TYPE_DOUBLE_CHEST);
+        $this->menu = InvMenu::create(ResponsiveInvMenuHandler::TYPE_DOUBLE_CHEST);
         /** @var $responeInv ResponsiveInvMenuInventory */
         $responeInv = $this->menu->getInventory();
 
