@@ -32,9 +32,9 @@ use blugin\lib\command\listener\AvaliableCommandListener;
 use blugin\lib\command\listener\EnumUpdateListener;
 use blugin\lib\command\overload\Overload;
 use blugin\lib\command\parameter\defaults\PlayerParameter;
-use blugin\lib\invmenu\responsive\ResponsiveInvMenuHandler;
-use blugin\lib\invmenu\responsive\ResponsiveInvMenuInventory;
-use blugin\lib\invmenu\responsive\slot\SyncSlot;
+use blugin\lib\invmenu\plus\inventory\SlotBasedInventory;
+use blugin\lib\invmenu\plus\InvMenuPlusHandler;
+use blugin\lib\invmenu\plus\inventory\slot\defaults\SyncSlot;
 use blugin\lib\translator\traits\TranslatorHolderTrait;
 use blugin\lib\translator\TranslatorHolder;
 use blugin\traits\singleton\SingletonTrait;
@@ -60,7 +60,7 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
     }
 
     public function onEnable() : void{
-        ResponsiveInvMenuHandler::register($this);
+        InvMenuPlusHandler::register($this);
         AvaliableCommandListener::register($this);
         EnumUpdateListener::register($this);
 
@@ -74,7 +74,7 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
                     return true;
                 }
 
-                $menu = MonitorInstance::load($args["player"])->getMainMenu();
+                $menu = MonitorInstance::load($args["player"])->getMenu();
                 $menu->setName($command->getMessage($sender, "chest.name.main", [$args["player"]]));
                 $menu->send($sender);
                 return true;
@@ -92,7 +92,7 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
     public function handlePlayerEvent(PlayerEvent $event){
         $monitor = MonitorInstance::get(strtolower($event->getPlayer()->getName()));
         if($monitor !== null){
-            $monitor->getMainMenu()->getInventory()->removeAllViewers();
+            $monitor->getMenu()->getInventory()->removeAllViewers();
         }
     }
 
@@ -124,8 +124,8 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
             if($monitor === null)
                 continue;
 
-            $menuInv = $monitor->getMainMenu()->getInventory();
-            if(!$menuInv instanceof ResponsiveInvMenuInventory)
+            $menuInv = $monitor->getMenu()->getInventory();
+            if(!$menuInv instanceof SlotBasedInventory)
                 continue;
 
             $slotIndex = $action->getSlot();

@@ -28,12 +28,13 @@ declare(strict_types=1);
 namespace blugin\inventorymonitor;
 
 use blugin\inventorymonitor\inventory\OfflinePlayerInventory;
-use blugin\inventorymonitor\slot\ToggleInventorySlot;
-use blugin\lib\invmenu\responsive\ResponsiveInvMenuHandler;
-use blugin\lib\invmenu\responsive\ResponsiveInvMenuInventory;
-use blugin\lib\invmenu\responsive\slot\ImmutableSlot;
-use blugin\lib\invmenu\responsive\slot\OneWaySyncSlot;
-use blugin\lib\invmenu\responsive\slot\SyncSlot;
+use blugin\lib\invmenu\plus\inventory\slot\defaults\ImmutableSlot;
+use blugin\lib\invmenu\plus\inventory\slot\defaults\OneWaySyncSlot;
+use blugin\lib\invmenu\plus\inventory\slot\defaults\SwitcingPageSlot;
+use blugin\lib\invmenu\plus\inventory\slot\defaults\SyncSlot;
+use blugin\lib\invmenu\plus\inventory\SlotBasedItemArray;
+use blugin\lib\invmenu\plus\inventory\SlotPagingInventory;
+use blugin\lib\invmenu\plus\InvMenuPlus;
 use blugin\traits\selffactory\SelfFactoryTrait;
 use muqsit\invmenu\InvMenu;
 use pocketmine\inventory\BaseInventory;
@@ -46,6 +47,14 @@ use pocketmine\Player;
 use pocketmine\Server;
 
 class MonitorInstance{
+    public const TYPE_MAIN = 0;
+    public const TYPE_ENDER = 1;
+
+    public const NAME_MAP = [
+        self::TYPE_MAIN => "main",
+        self::TYPE_ENDER => "ender"
+    ];
+
     use SelfFactoryTrait;
 
     /** @var string */
@@ -64,10 +73,7 @@ class MonitorInstance{
     private $cursorInventory;
 
     /** @var InvMenu */
-    private $mainMenu;
-
-    /** @var InvMenu */
-    private $enderMenu;
+    private $menu;
 
     public function __construct(string $playerName, BaseInventory $mainInventory, BaseInventory $armorInventory, ?BaseInventory $enderChestInventory = null, ?BaseInventory $cursorInventory = null){
         $this->playerName = strtolower($playerName);
@@ -77,15 +83,12 @@ class MonitorInstance{
         $this->cursorInventory = $cursorInventory;
 
         //Create inv menu
-        $this->mainMenu = InvMenu::create(ResponsiveInvMenuHandler::TYPE_DOUBLE_CHEST);
-        $this->enderMenu = InvMenu::create(ResponsiveInvMenuHandler::TYPE_DOUBLE_CHEST);
+        $this->menu = InvMenuPlus::create(InvMenu::TYPE_DOUBLE_CHEST, SlotPagingInventory::class);
 
-        /**
-         * @var $mainInv ResponsiveInvMenuInventory
-         * @var $enderInv ResponsiveInvMenuInventory
-         */
-        $mainInv = $this->mainMenu->getInventory();
-        $enderInv = $this->enderMenu->getInventory();
+        /** @var $menuInv SlotPagingInventory */
+        $menuInv = $this->menu->getInventory();
+        $mainPage = new SlotBasedItemArray($menuInv->getSize());
+        $enderPage = new SlotBasedItemArray($menuInv->getSize());
 
         //Fill the rest with iron bars
         static $immutableSlot;
@@ -93,42 +96,39 @@ class MonitorInstance{
             $immutableSlot = new ImmutableSlot(Item::get(ItemIds::IRON_BARS)->setCustomName(InventoryMonitor::getInstance()->getTranslator()->translate("chest.slot.border")));
         }
         for($i = 0; $i < 54; ++$i){
-            $mainInv->setSlot($i, clone $immutableSlot);
-            $enderInv->setSlot($i, clone $immutableSlot);
+            $mainPage[$i] = clone $immutableSlot;
+            $enderPage[$i] = clone $immutableSlot;
         }
 
         //Synchronize with inventory
         for($i = 0; $i < 36; ++$i){
-            $mainInv->setSlot($i, new SyncSlot($mainInventory, $i));
+            $mainPage[$i] = new SyncSlot($mainInventory, $i);
         }
 
         //Synchronize with armor inventory
         for($i = 46; $i < 50; ++$i){
-            $mainInv->setSlot($i, new SyncSlot($armorInventory, $i % 46));
+            $mainPage[$i] = new SyncSlot($armorInventory, $i - 46);
         }
 
         if($cursorInventory !== null){
-            $mainInv->setSlot(51, new OneWaySyncSlot($cursorInventory, 0));
+            $mainPage[51] = new OneWaySyncSlot($cursorInventory, 0);
         }
 
         //Synchronize with ender inventory
         if($enderChestInventory !== null){
             for($i = 0; $i < 27; ++$i){
-                $enderInv->setSlot($i, new SyncSlot($enderChestInventory, $i));
+                $enderPage[$i] = new SyncSlot($enderChestInventory, $i);
             }
         }
+        $tanslator = InventoryMonitor::getInstance()->getTranslator();
+        $mainPage[53] = new SwitcingPageSlot(Item::get(ItemIds::ENDER_CHEST)->setCustomName($tanslator->translate("chest.slot.toggle." . self::NAME_MAP[self::TYPE_ENDER])), self::TYPE_ENDER);
+        $enderPage[53] = new SwitcingPageSlot(Item::get(ItemIds::CHEST)->setCustomName($tanslator->translate("chest.slot.toggle." . self::NAME_MAP[self::TYPE_MAIN])), self::TYPE_MAIN);
+        $menuInv->setPages([$mainPage, $enderPage], self::TYPE_MAIN);
 
-        $translator =
-            $mainInv->setSlot(53, new ToggleInventorySlot(Item::get(ItemIds::ENDER_CHEST), $this->enderMenu, ToggleInventorySlot::TYPE_ENDER));
-        $enderInv->setSlot(53, new ToggleInventorySlot(Item::get(ItemIds::CHEST), $this->mainMenu, ToggleInventorySlot::TYPE_MAIN));
-
-        //Binding responsive inventory to inv menu
-        $mainInv->bind($this->mainMenu);
-        $enderInv->bind($this->enderMenu);
-        $this->mainMenu->setListener($mainInv->getListener());
-        $this->enderMenu->setListener($enderInv->getListener());
-        $this->mainMenu->setInventoryCloseListener(\Closure::fromCallable([$this, "onInventoryClose"]));
-        $this->enderMenu->setInventoryCloseListener(\Closure::fromCallable([$this, "onInventoryClose"]));
+        //Binding inventory to menu
+        $menuInv->bind($this->menu);
+        $this->menu->setListener($menuInv->getListener());
+        $this->menu->setInventoryCloseListener(\Closure::fromCallable([$this, "onInventoryClose"]));
     }
 
     public static function load(string $playerName, bool $includeOffline = true) : ?MonitorInstance{
@@ -164,13 +164,12 @@ class MonitorInstance{
                 $server->saveOfflinePlayerData($monitor->playerName, $namedTag);
             };
         }
-        $monitor->getMainMenu()->setInventoryCloseListener($onInventoryClose);
-        $monitor->getEnderMenu()->setInventoryCloseListener($onInventoryClose);
+        $monitor->getMenu()->setInventoryCloseListener($onInventoryClose);
         return $monitor;
     }
 
     public function onInventoryClose() : bool{
-        if(empty($this->getMainMenu()->getInventory()->getViewers()) && empty($this->getEnderMenu()->getInventory()->getViewers())){
+        if(empty($this->getMenu()->getInventory()->getViewers())){
             unset(self::$instances[$this->playerName]);
             return false;
         }
@@ -197,11 +196,7 @@ class MonitorInstance{
         return $this->cursorInventory;
     }
 
-    public function getMainMenu() : InvMenu{
-        return $this->mainMenu;
-    }
-
-    public function getEnderMenu() : InvMenu{
-        return $this->enderMenu;
+    public function getMenu() : InvMenu{
+        return $this->menu;
     }
 }
