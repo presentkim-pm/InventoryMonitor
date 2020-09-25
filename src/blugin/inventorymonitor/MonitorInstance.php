@@ -51,7 +51,7 @@ class MonitorInstance{
     private $playerName;
 
     /** @var BaseInventory */
-    private $inventory;
+    private $mainInventory;
 
     /** @var BaseInventory */
     private $armorInventory;
@@ -62,9 +62,9 @@ class MonitorInstance{
     /** @var InvMenu */
     private $menu;
 
-    public function __construct(string $playerName, BaseInventory $inventory, BaseInventory $armorInventory, ?BaseInventory $cursorInventory = null){
+    public function __construct(string $playerName, BaseInventory $mainInventory, BaseInventory $armorInventory, ?BaseInventory $cursorInventory = null){
         $this->playerName = strtolower($playerName);
-        $this->inventory = $inventory;
+        $this->mainInventory = $mainInventory;
         $this->armorInventory = $armorInventory;
         $this->cursorInventory = $cursorInventory;
 
@@ -75,7 +75,6 @@ class MonitorInstance{
 
         //Synchronize with inventory
         for($i = 0; $i < 36; ++$i){
-            $responeInv->setSlot($i, new SyncSlot($inventory, $i));
         }
 
         //Fill the rest with iron bars
@@ -85,6 +84,7 @@ class MonitorInstance{
         }
         for($i = 36; $i < 54; ++$i){
             $responeInv->setSlot($i, clone $immutableSlot);
+            $mainInv->setSlot($i, new SyncSlot($mainInventory, $i));
         }
 
         //Synchronize with armor inventory
@@ -107,7 +107,7 @@ class MonitorInstance{
             $server = Server::getInstance();
             if($server->getPlayerExact($this->playerName) === null){
                 $inventoryTag = new ListTag("Inventory", [], NBT::TAG_Compound);
-                //Inventory
+                //Main
                 for($slot = 0; $slot < 36; ++$slot){
                     $item = $this->getInventory()->getItem($slot);
                     if(!$item->isNull()){
@@ -168,8 +168,8 @@ class MonitorInstance{
         return $this->playerName;
     }
 
-    public function getInventory() : BaseInventory{
-        return $this->inventory;
+    public function getMainInventory() : BaseInventory{
+        return $this->mainInventory;
     }
 
     public function getArmorInventory() : BaseInventory{
