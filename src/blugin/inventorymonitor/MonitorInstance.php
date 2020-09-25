@@ -28,12 +28,12 @@ declare(strict_types=1);
 namespace blugin\inventorymonitor;
 
 use blugin\inventorymonitor\inventory\OfflinePlayerInventory;
+use blugin\inventorymonitor\slot\ToggleInventorySlot;
 use blugin\lib\invmenu\responsive\ResponsiveInvMenuHandler;
 use blugin\lib\invmenu\responsive\ResponsiveInvMenuInventory;
 use blugin\lib\invmenu\responsive\slot\ImmutableSlot;
 use blugin\lib\invmenu\responsive\slot\OneWaySyncSlot;
 use blugin\lib\invmenu\responsive\slot\SyncSlot;
-use blugin\lib\invmenu\responsive\slot\ToggleMenuSlot;
 use blugin\traits\selffactory\SelfFactoryTrait;
 use muqsit\invmenu\InvMenu;
 use pocketmine\inventory\BaseInventory;
@@ -90,7 +90,7 @@ class MonitorInstance{
         //Fill the rest with iron bars
         static $immutableSlot;
         if(!isset($immutableSlot)){
-            $immutableSlot = new ImmutableSlot(Item::get(ItemIds::IRON_BARS));
+            $immutableSlot = new ImmutableSlot(Item::get(ItemIds::IRON_BARS)->setCustomName(InventoryMonitor::getInstance()->getTranslator()->translate("chest.slot.border")));
         }
         for($i = 0; $i < 54; ++$i){
             $mainInv->setSlot($i, clone $immutableSlot);
@@ -118,8 +118,9 @@ class MonitorInstance{
             }
         }
 
-        $mainInv->setSlot(53, new ToggleMenuSlot(Item::get(ItemIds::ENDER_CHEST), $this->enderMenu));
-        $enderInv->setSlot(53, new ToggleMenuSlot(Item::get(ItemIds::CHEST), $this->mainMenu));
+        $translator =
+            $mainInv->setSlot(53, new ToggleInventorySlot(Item::get(ItemIds::ENDER_CHEST), $this->enderMenu, ToggleInventorySlot::TYPE_ENDER));
+        $enderInv->setSlot(53, new ToggleInventorySlot(Item::get(ItemIds::CHEST), $this->mainMenu, ToggleInventorySlot::TYPE_MAIN));
 
         //Binding responsive inventory to inv menu
         $mainInv->bind($this->mainMenu);

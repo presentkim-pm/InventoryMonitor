@@ -123,6 +123,7 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
             $monitor = MonitorInstance::get(strtolower($player->getName()));
             if($monitor === null)
                 continue;
+
             $menuInv = $monitor->getMainMenu()->getInventory();
             if(!$menuInv instanceof ResponsiveInvMenuInventory)
                 continue;
