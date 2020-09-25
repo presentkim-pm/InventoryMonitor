@@ -48,7 +48,6 @@ use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\scheduler\ClosureTask;
-use pocketmine\Server;
 
 class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
     use TranslatorHolderTrait, BaseCommandTrait, SingletonTrait;
@@ -76,8 +75,7 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
                 }
 
                 $menu = MonitorInstance::load($args["player"])->getMainMenu();
-                $online = Server::getInstance()->getPlayerExact($args["player"]) !== null;
-                $menu->setName($command->getMessage($sender, "chest.name." . ($online ? "online" : "offline"), [$args["player"]]));
+                $menu->setName($command->getMessage($sender, "chest.name.main", [$args["player"]]));
                 $menu->send($sender);
                 return true;
             });
