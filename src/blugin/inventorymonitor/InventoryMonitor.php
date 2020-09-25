@@ -75,7 +75,7 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
                     return true;
                 }
 
-                $menu = MonitorInstance::load($args["player"])->getMenu();
+                $menu = MonitorInstance::load($args["player"])->getMainMenu();
                 $online = Server::getInstance()->getPlayerExact($args["player"]) !== null;
                 $menu->setName($command->getMessage($sender, "chest.name." . ($online ? "online" : "offline"), [$args["player"]]));
                 $menu->send($sender);
@@ -94,7 +94,7 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
     public function handlePlayerEvent(PlayerEvent $event){
         $monitor = MonitorInstance::get(strtolower($event->getPlayer()->getName()));
         if($monitor !== null){
-            $monitor->getMenu()->getInventory()->removeAllViewers();
+            $monitor->getMainMenu()->getInventory()->removeAllViewers();
         }
     }
 
@@ -125,7 +125,7 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
             $monitor = MonitorInstance::get(strtolower($player->getName()));
             if($monitor === null)
                 continue;
-            $menuInv = $monitor->getMenu()->getInventory();
+            $menuInv = $monitor->getMainMenu()->getInventory();
             if(!$menuInv instanceof ResponsiveInvMenuInventory)
                 continue;
 

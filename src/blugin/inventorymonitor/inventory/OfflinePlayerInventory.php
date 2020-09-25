@@ -35,37 +35,70 @@ use pocketmine\nbt\tag\ListTag;
 use pocketmine\network\mcpe\protocol\types\WindowTypes;
 
 class OfflinePlayerInventory extends ContainerInventory{
-    public const TYPE_INVENTORY = 36;
-    public const TYPE_ARMOR = 4;
+    public const TYPE_MAIN = 0;
+    public const TYPE_ARMOR = 1;
+    public const TYPE_ENDERCHEST = 2;
 
     public const SIZE = [
-        self::TYPE_INVENTORY => 36,
-        self::TYPE_ARMOR => 4
+        self::TYPE_MAIN => 36,
+        self::TYPE_ARMOR => 4,
+        self::TYPE_ENDERCHEST => 27
     ];
 
     public const INDEX = [
-        self::TYPE_INVENTORY => 9,
-        self::TYPE_ARMOR => 100
+        self::TYPE_MAIN => 9,
+        self::TYPE_ARMOR => 100,
+        self::TYPE_ENDERCHEST => 0
+    ];
+
+    public const TAG_NAME = [
+        self::TYPE_MAIN => "Inventory",
+        self::TYPE_ARMOR => "Inventory",
+        self::TYPE_ENDERCHEST => "EnderChestInventory"
     ];
 
     /** @var int */
     private $type;
 
-    public function __construct(ListTag $inventoryTag, int $type){
+    public function __construct(CompoundTag $nbt, int $type){
         $size = self::SIZE[$type];
         $index = self::INDEX[$type];
+        $tagName = self::TAG_NAME[$type];
 
         $items = [];
-        /** @var CompoundTag $itemTag */
-        foreach($inventoryTag as $i => $itemTag){
-            $slot = $itemTag->getByte("Slot");
-            $item = Item::nbtDeserialize($itemTag);
-            if($slot >= $index && $slot < ($index + $size)){
-                $items[$slot - $index] = $item;
+        $inventoryTag = $nbt->getListTag($tagName);
+        if($inventoryTag !== null){
+            /** @var CompoundTag $itemTag */
+            foreach($inventoryTag as $i => $itemTag){
+                $slot = $itemTag->getByte("Slot");
+                $item = Item::nbtDeserialize($itemTag);
+                if($slot >= $index && $slot < ($index + $size)){
+                    $items[$slot - $index] = $item;
+                }
             }
         }
         parent::__construct(new Vector3(), $items, $size);
         $this->type = $type;
+    }
+
+    /** @return OfflinePlayerInventory[] */
+    public static function load(CompoundTag $nbt) : array{
+        return [
+            self::TYPE_MAIN => new OfflinePlayerInventory($nbt, self::TYPE_MAIN),
+            self::TYPE_ARMOR => new OfflinePlayerInventory($nbt, self::TYPE_ARMOR),
+            self::TYPE_ENDERCHEST => new OfflinePlayerInventory($nbt, self::TYPE_ENDERCHEST)
+        ];
+    }
+
+    public function save(ListTag $tag) : ListTag{
+        $size = $this->getSize();
+        for($slot = 0; $slot < $size; ++$slot){
+            $item = $this->getItem($slot);
+            if(!$item->isNull()){
+                $tag->push($item->nbtSerialize($slot + self::INDEX[$this->type]));
+            }
+        }
+        return $tag;
     }
 
     public function getName() : string{ return "OfflinePlayerInventory"; }

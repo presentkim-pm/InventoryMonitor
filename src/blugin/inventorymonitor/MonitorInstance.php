@@ -33,6 +33,7 @@ use blugin\lib\invmenu\responsive\ResponsiveInvMenuInventory;
 use blugin\lib\invmenu\responsive\slot\ImmutableSlot;
 use blugin\lib\invmenu\responsive\slot\OneWaySyncSlot;
 use blugin\lib\invmenu\responsive\slot\SyncSlot;
+use blugin\lib\invmenu\responsive\slot\ToggleMenuSlot;
 use blugin\traits\selffactory\SelfFactoryTrait;
 use muqsit\invmenu\InvMenu;
 use pocketmine\inventory\BaseInventory;
@@ -56,88 +57,79 @@ class MonitorInstance{
     /** @var BaseInventory */
     private $armorInventory;
 
+    /** @var BaseInventory */
+    private $enderChestInventory;
+
     /** @var BaseInventory|null */
     private $cursorInventory;
 
     /** @var InvMenu */
-    private $menu;
+    private $mainMenu;
 
-    public function __construct(string $playerName, BaseInventory $mainInventory, BaseInventory $armorInventory, ?BaseInventory $cursorInventory = null){
+    /** @var InvMenu */
+    private $enderMenu;
+
+    public function __construct(string $playerName, BaseInventory $mainInventory, BaseInventory $armorInventory, ?BaseInventory $enderChestInventory = null, ?BaseInventory $cursorInventory = null){
         $this->playerName = strtolower($playerName);
         $this->mainInventory = $mainInventory;
         $this->armorInventory = $armorInventory;
+        $this->enderChestInventory = $enderChestInventory;
         $this->cursorInventory = $cursorInventory;
 
         //Create inv menu
-        $this->menu = InvMenu::create(ResponsiveInvMenuHandler::TYPE_DOUBLE_CHEST);
-        /** @var $responeInv ResponsiveInvMenuInventory */
-        $responeInv = $this->menu->getInventory();
+        $this->mainMenu = InvMenu::create(ResponsiveInvMenuHandler::TYPE_DOUBLE_CHEST);
+        $this->enderMenu = InvMenu::create(ResponsiveInvMenuHandler::TYPE_DOUBLE_CHEST);
 
-        //Synchronize with inventory
-        for($i = 0; $i < 36; ++$i){
-        }
+        /**
+         * @var $mainInv ResponsiveInvMenuInventory
+         * @var $enderInv ResponsiveInvMenuInventory
+         */
+        $mainInv = $this->mainMenu->getInventory();
+        $enderInv = $this->enderMenu->getInventory();
 
         //Fill the rest with iron bars
         static $immutableSlot;
         if(!isset($immutableSlot)){
             $immutableSlot = new ImmutableSlot(Item::get(ItemIds::IRON_BARS));
         }
-        for($i = 36; $i < 54; ++$i){
-            $responeInv->setSlot($i, clone $immutableSlot);
+        for($i = 0; $i < 54; ++$i){
+            $mainInv->setSlot($i, clone $immutableSlot);
+            $enderInv->setSlot($i, clone $immutableSlot);
+        }
+
+        //Synchronize with inventory
+        for($i = 0; $i < 36; ++$i){
             $mainInv->setSlot($i, new SyncSlot($mainInventory, $i));
         }
 
         //Synchronize with armor inventory
         for($i = 46; $i < 50; ++$i){
-            $responeInv->setSlot($i, new SyncSlot($armorInventory, $i % 46));
+            $mainInv->setSlot($i, new SyncSlot($armorInventory, $i % 46));
         }
 
         if($cursorInventory !== null){
-            $responeInv->setSlot(53, new OneWaySyncSlot($cursorInventory, 0));
+            $mainInv->setSlot(51, new OneWaySyncSlot($cursorInventory, 0));
         }
 
-        //Binding responsive inventory to inv menu
-        $responeInv->bind($this->menu);
-        $this->menu->setListener($responeInv->getListener());
-        //If no one is using the monitor, remove the instance
-        $this->menu->setInventoryCloseListener(function(Player $player, Inventory $inventory) : void{
-            if(!empty($inventory->getViewers()))
-                return;
-
-            $server = Server::getInstance();
-            if($server->getPlayerExact($this->playerName) === null){
-                $inventoryTag = new ListTag("Inventory", [], NBT::TAG_Compound);
-                //Main
-                for($slot = 0; $slot < 36; ++$slot){
-                    $item = $this->getInventory()->getItem($slot);
-                    if(!$item->isNull()){
-                        $inventoryTag->push($item->nbtSerialize($slot + 9));
-                    }
-                }
-
-                //Armor
-                for($slot = 0; $slot < 4; ++$slot){
-                    $item = $this->getArmorInventory()->getItem($slot);
-                    if(!$item->isNull()){
-                        $inventoryTag->push($item->nbtSerialize($slot + 100));
-                    }
-                }
-
-                $namedTag = $server->getOfflinePlayerData($this->playerName);
-                $namedTag->setTag($inventoryTag);
-                $server->saveOfflinePlayerData($this->playerName, $namedTag);
+        //Synchronize with ender inventory
+        if($enderChestInventory !== null){
+            for($i = 0; $i < 27; ++$i){
+                $enderInv->setSlot($i, new SyncSlot($enderChestInventory, $i));
             }
+        }
 
-            unset(self::$instances[$this->playerName]);
-        });
+        $mainInv->setSlot(53, new ToggleMenuSlot(Item::get(ItemIds::ENDER_CHEST), $this->enderMenu));
+        $enderInv->setSlot(53, new ToggleMenuSlot(Item::get(ItemIds::CHEST), $this->mainMenu));
+
+        //Binding responsive inventory to inv menu
+        $mainInv->bind($this->mainMenu);
+        $enderInv->bind($this->enderMenu);
+        $this->mainMenu->setListener($mainInv->getListener());
+        $this->enderMenu->setListener($enderInv->getListener());
+        $this->mainMenu->setInventoryCloseListener(\Closure::fromCallable([$this, "onInventoryClose"]));
+        $this->enderMenu->setInventoryCloseListener(\Closure::fromCallable([$this, "onInventoryClose"]));
     }
 
-    /**
-     * @param string $playerName
-     * @param bool   $includeOffline = true
-     *
-     * @return null|MonitorInstance
-     */
     public static function load(string $playerName, bool $includeOffline = true) : ?MonitorInstance{
         $playerName = strtolower($playerName);
         if(($monitor = self::get($playerName)) !== null)
@@ -145,23 +137,43 @@ class MonitorInstance{
 
         $server = Server::getInstance();
         $player = $server->getPlayerExact($playerName);
-        if($player instanceof Player){
-            return self::$instances[$playerName] = new MonitorInstance($playerName, $player->getInventory(), $player->getArmorInventory(), $player->getCursorInventory());
+        if($player instanceof Player)
+            return self::$instances[$playerName] = new MonitorInstance($playerName, $player->getInventory(), $player->getArmorInventory(), $player->getEnderChestInventory(), $player->getCursorInventory());
+
+        if(!$includeOffline || !$server->hasOfflinePlayerData($playerName))
+            return null;
+
+        [$mainInv, $armorInv, $enderInv] = OfflinePlayerInventory::load($server->getOfflinePlayerData($playerName));
+        $monitor = self::$instances[$playerName] = new MonitorInstance($playerName, $mainInv, $armorInv, $enderInv);
+
+        //If no one is using the monitor, remove the instance
+        static $onInventoryClose;
+        if(!isset($onInventoryClose)){
+            $onInventoryClose = function(Player $player, Inventory $inventory) use ($monitor, $server, $mainInv, $armorInv, $enderInv) : void{
+                if($monitor->onInventoryClose())
+                    return;
+
+                $inventoryTag = $mainInv->save(new ListTag("Inventory", [], NBT::TAG_Compound));
+                $inventoryTag = $armorInv->save($inventoryTag);
+                $enderChestTag = $enderInv->save(new ListTag("EnderChestInventory", [], NBT::TAG_Compound));
+
+                $namedTag = $server->getOfflinePlayerData($monitor->playerName);
+                $namedTag->setTag($inventoryTag);
+                $namedTag->setTag($enderChestTag);
+                $server->saveOfflinePlayerData($monitor->playerName, $namedTag);
+            };
         }
+        $monitor->getMainMenu()->setInventoryCloseListener($onInventoryClose);
+        $monitor->getEnderMenu()->setInventoryCloseListener($onInventoryClose);
+        return $monitor;
+    }
 
-        if(!$includeOffline || !file_exists($server->getDataPath() . "players/{$playerName}.dat"))
-            return null;
-
-        $nbt = $server->getOfflinePlayerData($playerName);
-        $inventoryTag = $nbt->getListTag("Inventory");
-        if($inventoryTag === null)
-            return null;
-
-        return self::$instances[$playerName] = new MonitorInstance(
-            $playerName,
-            new OfflinePlayerInventory($inventoryTag, OfflinePlayerInventory::TYPE_INVENTORY),
-            new OfflinePlayerInventory($inventoryTag, OfflinePlayerInventory::TYPE_ARMOR)
-        );
+    public function onInventoryClose() : bool{
+        if(empty($this->getMainMenu()->getInventory()->getViewers()) && empty($this->getEnderMenu()->getInventory()->getViewers())){
+            unset(self::$instances[$this->playerName]);
+            return false;
+        }
+        return true;
     }
 
     public function getPlayerName() : string{
@@ -176,11 +188,19 @@ class MonitorInstance{
         return $this->armorInventory;
     }
 
+    public function getEnderChestInventory() : BaseInventory{
+        return $this->enderChestInventory;
+    }
+
     public function getCursorInventory() : BaseInventory{
         return $this->cursorInventory;
     }
 
-    public function getMenu() : InvMenu{
-        return $this->menu;
+    public function getMainMenu() : InvMenu{
+        return $this->mainMenu;
+    }
+
+    public function getEnderMenu() : InvMenu{
+        return $this->enderMenu;
     }
 }
