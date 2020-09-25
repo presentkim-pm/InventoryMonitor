@@ -44,8 +44,6 @@ use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerEvent;
 use pocketmine\event\player\PlayerPreLoginEvent;
 use pocketmine\event\player\PlayerQuitEvent;
-use pocketmine\inventory\ArmorInventory;
-use pocketmine\inventory\PlayerInventory;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
@@ -115,8 +113,9 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
         foreach($event->getTransaction()->getActions() as $key => $action){
             if(!$action instanceof SlotChangeAction)
                 continue;
+
             $inventory = $action->getInventory();
-            if(!($inventory instanceof ArmorInventory || $inventory instanceof PlayerInventory))
+            if(!method_exists($inventory, 'getHolder'))
                 continue;
 
             $player = $inventory->getHolder();
@@ -126,7 +125,6 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
             $monitor = MonitorInstance::get(strtolower($player->getName()));
             if($monitor === null)
                 continue;
-
             $menuInv = $monitor->getMenu()->getInventory();
             if(!$menuInv instanceof ResponsiveInvMenuInventory)
                 continue;
@@ -139,8 +137,8 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
                 if($slot->getInventory() !== $inventory || $slot->getSlot() !== $slotIndex)
                     continue;
 
-                $this->getScheduler()->scheduleDelayedTask(new ClosureTask(function(int $_) use ($menuInv, $slotIndex) : void{
-                    $menuInv->sendSlot($slotIndex, $menuInv->getViewers());
+                $this->getScheduler()->scheduleDelayedTask(new ClosureTask(function(int $_) use ($menuInv, $index) : void{
+                    $menuInv->sendSlot($index, $menuInv->getViewers());
                 }), 1);
                 break;
             }
