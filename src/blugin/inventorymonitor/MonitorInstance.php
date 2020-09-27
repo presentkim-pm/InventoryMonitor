@@ -60,27 +60,11 @@ class MonitorInstance{
     /** @var string */
     private $playerName;
 
-    /** @var BaseInventory */
-    private $mainInventory;
-
-    /** @var BaseInventory */
-    private $armorInventory;
-
-    /** @var BaseInventory */
-    private $enderChestInventory;
-
-    /** @var BaseInventory|null */
-    private $cursorInventory;
-
     /** @var InvMenu */
     private $menu;
 
     public function __construct(string $playerName, BaseInventory $mainInventory, BaseInventory $armorInventory, ?BaseInventory $enderChestInventory = null, ?BaseInventory $cursorInventory = null){
         $this->playerName = strtolower($playerName);
-        $this->mainInventory = $mainInventory;
-        $this->armorInventory = $armorInventory;
-        $this->enderChestInventory = $enderChestInventory;
-        $this->cursorInventory = $cursorInventory;
 
         //Create inv menu
         $this->menu = InvMenuPlus::create(InvMenu::TYPE_DOUBLE_CHEST, SlotPagingInventory::class);
@@ -178,22 +162,6 @@ class MonitorInstance{
 
     public function getPlayerName() : string{
         return $this->playerName;
-    }
-
-    public function getMainInventory() : BaseInventory{
-        return $this->mainInventory;
-    }
-
-    public function getArmorInventory() : BaseInventory{
-        return $this->armorInventory;
-    }
-
-    public function getEnderChestInventory() : BaseInventory{
-        return $this->enderChestInventory;
-    }
-
-    public function getCursorInventory() : BaseInventory{
-        return $this->cursorInventory;
     }
 
     public function getMenu() : InvMenu{
