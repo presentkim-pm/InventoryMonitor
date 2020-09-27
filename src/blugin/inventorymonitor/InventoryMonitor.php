@@ -94,7 +94,9 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
     public function handlePlayerEvent(PlayerEvent $event){
         $monitor = MonitorInstance::get(strtolower($event->getPlayer()->getName()));
         if($monitor !== null){
-            $monitor->getMenu()->getInventory()->removeAllViewers();
+            foreach($monitor->getMenus() as $menu){
+                $menu->getInventory()->removeAllViewers();
+            }
         }
     }
 
