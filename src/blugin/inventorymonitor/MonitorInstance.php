@@ -60,19 +60,21 @@ class MonitorInstance{
     /** @var string */
     private $playerName;
 
-    /** @var InvMenu */
-    private $menu;
+    /** @var \Closure|null */
+    private $inventoryCloseListener = null;
+
+    /** @var SlotBasedItemArray[] */
+    private $pages = [];
+
+    /** @var InvMenuPlus[] */
+    private $menus = [];
 
     public function __construct(string $playerName, BaseInventory $mainInventory, BaseInventory $armorInventory, ?BaseInventory $enderChestInventory = null, ?BaseInventory $cursorInventory = null){
         $this->playerName = $playerName;
 
-        //Create inv menu
-        $this->menu = InvMenuPlus::create(InvMenu::TYPE_DOUBLE_CHEST, SlotPagingInventory::class);
-
-        /** @var $menuInv SlotPagingInventory */
-        $menuInv = $this->menu->getInventory();
-        $mainPage = new SlotBasedItemArray($menuInv->getSize());
-        $enderPage = new SlotBasedItemArray($menuInv->getSize());
+        //Create pages
+        $mainPage = new SlotBasedItemArray(54);
+        $enderPage = new SlotBasedItemArray(54);
 
         //Fill the rest with iron bars
         static $immutableSlot;
@@ -107,12 +109,9 @@ class MonitorInstance{
         $tanslator = InventoryMonitor::getInstance()->getTranslator();
         $mainPage[53] = new SwitcingPageSlot(Item::get(ItemIds::ENDER_CHEST)->setCustomName($tanslator->translate("chest.slot.toggle." . self::NAME_MAP[self::TYPE_ENDER])), self::TYPE_ENDER);
         $enderPage[53] = new SwitcingPageSlot(Item::get(ItemIds::CHEST)->setCustomName($tanslator->translate("chest.slot.toggle." . self::NAME_MAP[self::TYPE_MAIN])), self::TYPE_MAIN);
-        $menuInv->setPages([$mainPage, $enderPage], self::TYPE_MAIN);
 
-        //Binding inventory to menu
-        $menuInv->bind($this->menu);
-        $this->menu->setListener($menuInv->getListener());
-        $this->menu->setInventoryCloseListener(\Closure::fromCallable([$this, "onInventoryClose"]));
+        $this->pages[self::TYPE_MAIN] = $mainPage;
+        $this->pages[self::TYPE_ENDER] = $enderPage;
     }
 
     public static function load(string $playerName, bool $includeOffline = true) : ?MonitorInstance{
@@ -130,33 +129,36 @@ class MonitorInstance{
 
         [$mainInv, $armorInv, $enderInv] = OfflinePlayerInventory::load($server->getOfflinePlayerData($playerName));
         $monitor = self::$instances[$playerName] = new MonitorInstance($playerName, $mainInv, $armorInv, $enderInv);
-
         //If no one is using the monitor, remove the instance
         static $onInventoryClose;
         if(!isset($onInventoryClose)){
-            $onInventoryClose = function(Player $player, Inventory $inventory) use ($monitor, $server, $mainInv, $armorInv, $enderInv) : void{
-                if($monitor->onInventoryClose())
-                    return;
+            $onInventoryClose = function(Player $player, Inventory $inventory) use ($server, $monitor, $mainInv, $armorInv, $enderInv) : void{
+                if($this->onInventoryClose($player)){
+                    $inventoryTag = $mainInv->save(new ListTag("Inventory", [], NBT::TAG_Compound));
+                    $inventoryTag = $armorInv->save($inventoryTag);
+                    $enderChestTag = $enderInv->save(new ListTag("EnderChestInventory", [], NBT::TAG_Compound));
 
-                $inventoryTag = $mainInv->save(new ListTag("Inventory", [], NBT::TAG_Compound));
-                $inventoryTag = $armorInv->save($inventoryTag);
-                $enderChestTag = $enderInv->save(new ListTag("EnderChestInventory", [], NBT::TAG_Compound));
-
-                $namedTag = $server->getOfflinePlayerData($monitor->playerName);
-                $namedTag->setTag($inventoryTag);
-                $namedTag->setTag($enderChestTag);
-                $server->saveOfflinePlayerData($monitor->playerName, $namedTag);
+                    $namedTag = $server->getOfflinePlayerData($monitor->playerName);
+                    $namedTag->setTag($inventoryTag);
+                    $namedTag->setTag($enderChestTag);
+                    $server->saveOfflinePlayerData($monitor->playerName, $namedTag);
+                }
             };
         }
-        $monitor->getMenu()->setInventoryCloseListener($onInventoryClose);
+        $monitor->setInventoryCloseListener($onInventoryClose);
+
         return $monitor;
     }
 
-    public function onInventoryClose() : bool{
-        if(empty($this->getMenu()->getInventory()->getViewers())){
-            unset(self::$instances[$this->playerName]);
-            return false;
+    public function onInventoryClose(Player $player) : bool{
+        if(isset($this->menus[$key = spl_object_hash($player)])){
+            unset($this->menus[$key]);
         }
+        foreach($this->menus as $menu){
+            if(!empty($menu->getInventory()->getViewers()))
+                return false;
+        }
+        unset(self::$instances[$this->playerName]);
         return true;
     }
 
@@ -164,7 +166,64 @@ class MonitorInstance{
         return $this->playerName;
     }
 
-    public function getMenu() : InvMenu{
-        return $this->menu;
+    public function getInventoryCloseListener() : \Closure{
+        return $this->inventoryCloseListener ?? \Closure::fromCallable([$this, "onInventoryClose"]);
+    }
+
+    public function setInventoryCloseListener(?\Closure $listener) : void{
+        $this->inventoryCloseListener = $listener;
+    }
+
+    /** @return SlotBasedItemArray[] */
+    public function getPages() : array{
+        return $this->pages;
+    }
+
+    public function addPage(SlotBasedItemArray $page) : int{
+        $this->pages[] = $page;
+        return count($this->pages) - 1;
+    }
+
+    public function removePage(int $pageNumber) : void{
+        unset($this->pages[$pageNumber]);
+    }
+
+    public function getPage(int $pageNumber) : ?SlotBasedItemArray{
+        return $this->pages[$pageNumber] ?? null;
+    }
+
+    public function setPage(int $pageNumber, SlotBasedItemArray $page) : void{
+        if(!isset($this->pages[$pageNumber])){
+            $this->addPage($page);
+        }else{
+            $this->pages[$pageNumber] = $page;
+        }
+    }
+
+    /** @return InvMenuPlus[] */
+    public function getMenus() : array{
+        return $this->menus;
+    }
+
+    public function getMenu(Player $player) : ?InvMenuPlus{
+        return $this->menus[spl_object_hash($player)] ?? null;
+    }
+
+    public function send(Player $player, string $name) : InvMenuPlus{
+        if(!isset($this->menus[$key = spl_object_hash($player)])){
+            $menu = $this->menus[$key] = InvMenuPlus::create(InvMenu::TYPE_DOUBLE_CHEST, SlotPagingInventory::class);
+
+            /** @var $menuInv SlotPagingInventory */
+            $menuInv = $menu->getInventory();
+            $menuInv->setPages($this->pages, self::TYPE_MAIN);
+
+            $menuInv->bind($menu);
+            $menu->setListener($menuInv->getListener());
+            $menu->setInventoryCloseListener($this->getInventoryCloseListener());
+        }
+
+        $this->menus[$key]->setName($name);
+        $this->menus[$key]->send($player);
+        return $this->menus[$key];
     }
 }

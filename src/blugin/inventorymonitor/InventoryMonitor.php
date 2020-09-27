@@ -33,7 +33,7 @@ use blugin\lib\command\listener\EnumUpdateListener;
 use blugin\lib\command\overload\Overload;
 use blugin\lib\command\parameter\defaults\PlayerParameter;
 use blugin\lib\invmenu\plus\inventory\slot\defaults\SyncSlot;
-use blugin\lib\invmenu\plus\inventory\SlotBasedInventory;
+use blugin\lib\invmenu\plus\inventory\SlotPagingInventory;
 use blugin\lib\invmenu\plus\InvMenuPlusHandler;
 use blugin\lib\translator\traits\TranslatorHolderTrait;
 use blugin\lib\translator\TranslatorHolder;
@@ -74,10 +74,8 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
                     return true;
                 }
 
-                $instance = MonitorInstance::load($args["player"]);
-                $menu = $instance->getMenu();
-                $menu->setName($command->getMessage($sender, "chest.name.main", [$instance->getPlayerName()]));
-                $menu->send($sender);
+                $monitor = MonitorInstance::load($args["player"]);
+                $monitor->send($sender, $command->getMessage($sender, "chest.name.main", [$monitor->getPlayerName()]));
                 return true;
             });
         $this->getServer()->getCommandMap()->register($this->getName(), $command->addOverload($overload));
@@ -125,22 +123,25 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
             if($monitor === null)
                 continue;
 
-            $menuInv = $monitor->getMenu()->getInventory();
-            if(!$menuInv instanceof SlotBasedInventory)
-                continue;
+            foreach($monitor->getMenus() as $menu){
+                $menuInv = $menu->getInventory();
 
-            $slotIndex = $action->getSlot();
-            foreach($menuInv->getAllSlot() as $index => $slot){
-                if(!$slot instanceof SyncSlot)
+                if(!$menuInv instanceof SlotPagingInventory)
                     continue;
 
-                if($slot->getInventory() !== $inventory || $slot->getSlot() !== $slotIndex)
-                    continue;
+                $slotIndex = $action->getSlot();
+                foreach($menuInv->getAllSlot() as $index => $slot){
+                    if(!$slot instanceof SyncSlot)
+                        continue;
 
-                $this->getScheduler()->scheduleDelayedTask(new ClosureTask(function(int $_) use ($menuInv, $index) : void{
-                    $menuInv->sendSlot($index, $menuInv->getViewers());
-                }), 1);
-                break;
+                    if($slot->getInventory() !== $inventory || $slot->getSlot() !== $slotIndex)
+                        continue;
+
+                    $this->getScheduler()->scheduleDelayedTask(new ClosureTask(function(int $_) use ($menuInv, $index) : void{
+                        $menuInv->sendSlot($index, $menuInv->getViewers());
+                    }), 1);
+                    break;
+                }
             }
         }
     }
