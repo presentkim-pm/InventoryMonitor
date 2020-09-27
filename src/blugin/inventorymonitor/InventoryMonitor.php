@@ -44,6 +44,9 @@ use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerEvent;
 use pocketmine\event\player\PlayerPreLoginEvent;
 use pocketmine\event\player\PlayerQuitEvent;
+use pocketmine\inventory\ArmorInventory;
+use pocketmine\inventory\PlayerCursorInventory;
+use pocketmine\inventory\PlayerInventory;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
@@ -108,19 +111,15 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
     /** @priority MONITOR */
     public function onInventoryTransactionEvent(InventoryTransactionEvent $event) : void{
         foreach($event->getTransaction()->getActions() as $key => $action){
-            if(!$action instanceof SlotChangeAction)
-                continue;
-
-            $inventory = $action->getInventory();
-            if(!method_exists($inventory, 'getHolder'))
-                continue;
-
-            $player = $inventory->getHolder();
-            if(!$player instanceof Player)
-                continue;
-
-            $monitor = MonitorInstance::get(strtolower($player->getName()));
-            if($monitor === null)
+            if(!$action instanceof SlotChangeAction ||
+                !(
+                    ($inventory = $action->getInventory()) instanceof PlayerInventory ||
+                    $inventory instanceof ArmorInventory ||
+                    $inventory instanceof PlayerCursorInventory
+                ) ||
+                !($player = $inventory->getHolder()) instanceof Player ||
+                ($monitor = MonitorInstance::get(strtolower($player->getName()))) === null
+            )
                 continue;
 
             foreach($monitor->getMenus() as $menu){
@@ -131,10 +130,7 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
 
                 $slotIndex = $action->getSlot();
                 foreach($menuInv->getAllSlot() as $index => $slot){
-                    if(!$slot instanceof SyncSlot)
-                        continue;
-
-                    if($slot->getInventory() !== $inventory || $slot->getSlot() !== $slotIndex)
+                    if(!$slot instanceof SyncSlot || $slot->getInventory() !== $inventory || $slot->getSlot() !== $slotIndex)
                         continue;
 
                     $this->getScheduler()->scheduleDelayedTask(new ClosureTask(function(int $_) use ($menuInv, $index) : void{
