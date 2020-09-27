@@ -1,0 +1,15 @@
+---
+virion:
+  - src: Blugin/InvMenuPlus/InvMenuPlus
+    version: ^1.3.0
+  - src: Muqsit/InvMenu/InvMenu
+    version: 4.0.0
+  - src: Blugin/virions/SelfFactoryTrait
+    version: ^1.0.0
+  - src: Blugin/virions/SingletonTrait
+    version: ^1.0.0
+  - src: Blugin/libcommand/libcommand
+    version: ^1.3.4
+  - src: Blugin/libtranslator/libtranslator
+    version: ^1.0.7
+...

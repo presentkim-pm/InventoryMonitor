@@ -27,140 +27,120 @@ declare(strict_types=1);
 
 namespace blugin\inventorymonitor;
 
-use blugin\inventorymonitor\inventory\SyncInventory;
-use blugin\inventorymonitor\lang\PluginLang;
-use blugin\inventorymonitor\listener\InventoryEventListener;
-use blugin\inventorymonitor\listener\PlayerEventListener;
-use pocketmine\command\Command;
+use blugin\lib\command\BaseCommandTrait;
+use blugin\lib\command\listener\AvaliableCommandListener;
+use blugin\lib\command\listener\EnumUpdateListener;
+use blugin\lib\command\overload\Overload;
+use blugin\lib\command\parameter\defaults\PlayerParameter;
+use blugin\lib\invmenu\plus\inventory\slot\defaults\SyncSlot;
+use blugin\lib\invmenu\plus\inventory\SlotPagingInventory;
+use blugin\lib\invmenu\plus\InvMenuPlusHandler;
+use blugin\lib\translator\traits\TranslatorHolderTrait;
+use blugin\lib\translator\TranslatorHolder;
+use blugin\traits\singleton\SingletonTrait;
 use pocketmine\command\CommandSender;
-use pocketmine\command\PluginCommand;
-use pocketmine\permission\PermissionManager;
-use pocketmine\permission\PermissionParser;
-use pocketmine\player\Player;
+use pocketmine\event\inventory\InventoryTransactionEvent;
+use pocketmine\event\Listener;
+use pocketmine\event\player\PlayerEvent;
+use pocketmine\event\player\PlayerPreLoginEvent;
+use pocketmine\event\player\PlayerQuitEvent;
+use pocketmine\inventory\ArmorInventory;
+use pocketmine\inventory\PlayerCursorInventory;
+use pocketmine\inventory\PlayerInventory;
+use pocketmine\inventory\transaction\action\SlotChangeAction;
+use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
-use pocketmine\utils\SingletonTrait;
+use pocketmine\scheduler\ClosureTask;
 
-class InventoryMonitor extends PluginBase{
-    use SingletonTrait;
+class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
+    use TranslatorHolderTrait, BaseCommandTrait, SingletonTrait;
 
-    /** @var PluginLang */
-    private $language;
+    public function onLoad(){
+        self::$instance = $this;
 
-    /**
-     * Called when the plugin is loaded, before calling onEnable()
-     */
-    public function onLoad() : void{
-        self::setInstance($this);
+        $this->loadLanguage();
+        $this->getBaseCommand();
     }
 
-    /**
-     * Called when the plugin is enabled
-     */
     public function onEnable() : void{
-        //Save default resources
-        $this->saveResource("lang/eng/lang.ini", false);
-        $this->saveResource("lang/kor/lang.ini", false);
-        $this->saveResource("lang/language.list", false);
-
-        //Load config file
-        $config = $this->getConfig();
-
-        //Load language file
-        $this->language = new PluginLang($this, $config->getNested("settings.language"));
-        $this->getLogger()->info($this->language->translate("language.selected", [
-            $this->language->getName(),
-            $this->language->getLang()
-        ]));
+        InvMenuPlusHandler::register($this);
+        AvaliableCommandListener::register($this);
+        EnumUpdateListener::register($this);
 
         //Register main command
-        $command = new PluginCommand($config->getNested("command.name"), $this, $this);
-        $command->setPermission("inventorymonitor.cmd");
-        $command->setAliases($config->getNested("command.aliases"));
-        $command->setUsage($this->language->translate("commands.inventorymonitor.usage"));
-        $command->setDescription($this->language->translate("commands.inventorymonitor.description"));
-        $this->getServer()->getCommandMap()->register($this->getName(), $command);
+        $overload = (new Overload($command = $this->getBaseCommand()))
+            ->addParamater((new PlayerParameter("player"))->setIncludeOffline(true)->setExact(false))
+            ->setHandler(function(CommandSender $sender, array $args, Overload $overload) : bool{
+                $command = $overload->getBaseCommand();
+                if(!$sender instanceof Player){
+                    $command->sendMessage($sender, "commands.generic.onlyPlayer");
+                    return true;
+                }
 
-        //Load permission's default value from config
-        $permissions = PermissionManager::getInstance()->getPermissions();
-        $defaultValue = $config->getNested("permission.main");
-        if($defaultValue !== null){
-            $permissions["inventorymonitor.cmd"]->setDefault(PermissionParser::defaultFromString($config->getNested("permission.main")));
-        }
+                $monitor = MonitorInstance::load($args["player"]);
+                $monitor->send($sender, $command->getMessage($sender, "chest.name.main", [$monitor->getPlayerName()]));
+                return true;
+            });
+        $this->getServer()->getCommandMap()->register($this->getName(), $command->addOverload($overload));
 
-        //Register event listeners
-        $this->getServer()->getPluginManager()->registerEvents(new InventoryEventListener(), $this);
-        $this->getServer()->getPluginManager()->registerEvents(new PlayerEventListener(), $this);
+        $this->getServer()->getPluginManager()->registerEvents($this, $this);
     }
 
-    /**
-     * Called when the plugin is disabled
-     * Use this to free open things and finish actions
-     */
     public function onDisable() : void{
-        foreach(SyncInventory::getAll() as $playerName => $syncInventory){
-            $syncInventory->delete();
+        $this->getServer()->getCommandMap()->unregister($this->getBaseCommand());
+    }
+
+    /** @notHandler */
+    public function handlePlayerEvent(PlayerEvent $event){
+        $monitor = MonitorInstance::get(strtolower($event->getPlayer()->getName()));
+        if($monitor !== null){
+            foreach($monitor->getMenus() as $menu){
+                $menu->getInventory()->removeAllViewers();
+            }
         }
     }
 
-    /**
-     * @param CommandSender $sender
-     * @param Command       $command
-     * @param string        $label
-     * @param string[]      $args
-     *
-     * @return bool
-     */
-    public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
-        if(!$sender instanceof Player){
-            $sender->sendMessage($this->language->translate("commands.generic.onlyPlayer"));
-            return true;
-        }
-
-        if(!isset($args[0])){
-            return false;
-        }
-
-        $syncInventory = SyncInventory::load($args[0]);
-        if($syncInventory !== null){
-            $sender->setCurrentWindow($syncInventory);
-            return true;
-        }
-
-        $player = $this->getServer()->getPlayer($args[0]);
-        if($player instanceof Player){
-            $sender->setCurrentWindow(SyncInventory::load($player->getName()));
-            return true;
-        }
-
-        $sender->sendMessage($this->language->translate("commands.generic.player.notFound", [$args[0]]));
-        return true;
+    /** @priority MONITOR */
+    public function onPlayerPreLoginEvent(PlayerPreLoginEvent $event){
+        $this->handlePlayerEvent($event);
     }
 
-    /**
-     * @Override for multilingual support of the config file
-     *
-     * @return bool
-     */
-    public function saveDefaultConfig() : bool{
-        $resource = $this->getResource("lang/{$this->getServer()->getLanguage()->getLang()}/config.yml");
-        if($resource === null){
-            $resource = $this->getResource("lang/" . PluginLang::FALLBACK_LANGUAGE . "/config.yml");
-        }
-
-        if(file_exists($configFile = $this->getDataFolder() . "config.yml")){
-            return false;
-        }
-
-        $ret = stream_copy_to_stream($resource, $fp = fopen($configFile, "wb")) > 0;
-        fclose($fp);
-        fclose($resource);
-        return $ret;
+    /** @priority MONITOR */
+    public function onPlayerQuitEvent(PlayerQuitEvent $event){
+        $this->handlePlayerEvent($event);
     }
 
-    /**
-     * @return PluginLang
-     */
-    public function getLanguage() : PluginLang{
-        return $this->language;
+    /** @priority MONITOR */
+    public function onInventoryTransactionEvent(InventoryTransactionEvent $event) : void{
+        foreach($event->getTransaction()->getActions() as $key => $action){
+            if(!$action instanceof SlotChangeAction ||
+                !(
+                    ($inventory = $action->getInventory()) instanceof PlayerInventory ||
+                    $inventory instanceof ArmorInventory ||
+                    $inventory instanceof PlayerCursorInventory
+                ) ||
+                !($player = $inventory->getHolder()) instanceof Player ||
+                ($monitor = MonitorInstance::get(strtolower($player->getName()))) === null
+            )
+                continue;
+
+            foreach($monitor->getMenus() as $menu){
+                $menuInv = $menu->getInventory();
+
+                if(!$menuInv instanceof SlotPagingInventory)
+                    continue;
+
+                $slotIndex = $action->getSlot();
+                foreach($menuInv->getAllSlot() as $index => $slot){
+                    if(!$slot instanceof SyncSlot || $slot->getInventory() !== $inventory || $slot->getSlot() !== $slotIndex)
+                        continue;
+
+                    $this->getScheduler()->scheduleDelayedTask(new ClosureTask(function(int $_) use ($menuInv, $index) : void{
+                        $menuInv->sendSlot($index, $menuInv->getViewers());
+                    }), 1);
+                    break;
+                }
+            }
+        }
     }
 }
