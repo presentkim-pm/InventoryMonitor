@@ -32,9 +32,9 @@ use blugin\lib\command\listener\AvaliableCommandListener;
 use blugin\lib\command\listener\EnumUpdateListener;
 use blugin\lib\command\overload\Overload;
 use blugin\lib\command\parameter\defaults\PlayerParameter;
+use blugin\lib\invmenu\plus\inventory\slot\defaults\SyncSlot;
 use blugin\lib\invmenu\plus\inventory\SlotBasedInventory;
 use blugin\lib\invmenu\plus\InvMenuPlusHandler;
-use blugin\lib\invmenu\plus\inventory\slot\defaults\SyncSlot;
 use blugin\lib\translator\traits\TranslatorHolderTrait;
 use blugin\lib\translator\TranslatorHolder;
 use blugin\traits\singleton\SingletonTrait;
@@ -74,8 +74,9 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
                     return true;
                 }
 
-                $menu = MonitorInstance::load($args["player"])->getMenu();
-                $menu->setName($command->getMessage($sender, "chest.name.main", [$args["player"]]));
+                $instance = MonitorInstance::load($args["player"]);
+                $menu = $instance->getMenu();
+                $menu->setName($command->getMessage($sender, "chest.name.main", [$instance->getPlayerName()]));
                 $menu->send($sender);
                 return true;
             });

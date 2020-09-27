@@ -47,6 +47,8 @@ use pocketmine\Player;
 use pocketmine\Server;
 
 class MonitorInstance{
+    use SelfFactoryTrait;
+
     public const TYPE_MAIN = 0;
     public const TYPE_ENDER = 1;
 
@@ -55,8 +57,6 @@ class MonitorInstance{
         self::TYPE_ENDER => "ender"
     ];
 
-    use SelfFactoryTrait;
-
     /** @var string */
     private $playerName;
 
@@ -64,7 +64,7 @@ class MonitorInstance{
     private $menu;
 
     public function __construct(string $playerName, BaseInventory $mainInventory, BaseInventory $armorInventory, ?BaseInventory $enderChestInventory = null, ?BaseInventory $cursorInventory = null){
-        $this->playerName = strtolower($playerName);
+        $this->playerName = $playerName;
 
         //Create inv menu
         $this->menu = InvMenuPlus::create(InvMenu::TYPE_DOUBLE_CHEST, SlotPagingInventory::class);
@@ -123,7 +123,7 @@ class MonitorInstance{
         $server = Server::getInstance();
         $player = $server->getPlayerExact($playerName);
         if($player instanceof Player)
-            return self::$instances[$playerName] = new MonitorInstance($playerName, $player->getInventory(), $player->getArmorInventory(), $player->getEnderChestInventory(), $player->getCursorInventory());
+            return self::$instances[$playerName] = new MonitorInstance($player->getName(), $player->getInventory(), $player->getArmorInventory(), $player->getEnderChestInventory(), $player->getCursorInventory());
 
         if(!$includeOffline || !$server->hasOfflinePlayerData($playerName))
             return null;
