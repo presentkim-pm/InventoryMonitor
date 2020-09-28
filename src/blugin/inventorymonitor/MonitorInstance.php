@@ -58,16 +58,16 @@ class MonitorInstance{
     ];
 
     /** @var string */
-    private $playerName;
+    protected $playerName;
 
     /** @var \Closure|null */
-    private $inventoryCloseListener = null;
+    protected $inventoryCloseListener = null;
 
     /** @var SlotBasedItemArray[] */
-    private $pages = [];
+    protected $pages = [];
 
     /** @var InvMenuPlus[] */
-    private $menus = [];
+    protected $menus = [];
 
     public function __construct(string $playerName, BaseInventory $mainInventory, BaseInventory $armorInventory, ?BaseInventory $enderChestInventory = null, ?BaseInventory $cursorInventory = null){
         $this->playerName = $playerName;
