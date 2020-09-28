@@ -37,6 +37,7 @@ use blugin\lib\invmenu\plus\inventory\SlotPagingInventory;
 use blugin\lib\invmenu\plus\InvMenuPlusHandler;
 use blugin\lib\translator\traits\TranslatorHolderTrait;
 use blugin\lib\translator\TranslatorHolder;
+use blugin\tools\certification\Cert;
 use blugin\traits\singleton\SingletonTrait;
 use pocketmine\command\CommandSender;
 use pocketmine\event\inventory\InventoryTransactionEvent;
@@ -63,6 +64,9 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
     }
 
     public function onEnable() : void{
+        if(!Cert::validate($this))
+            return;
+
         InvMenuPlusHandler::register($this);
         AvaliableCommandListener::register($this);
         EnumUpdateListener::register($this);
