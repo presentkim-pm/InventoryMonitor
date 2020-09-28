@@ -38,6 +38,7 @@ use blugin\lib\invmenu\plus\InvMenuPlusHandler;
 use blugin\lib\translator\traits\TranslatorHolderTrait;
 use blugin\lib\translator\TranslatorHolder;
 use blugin\tools\certification\Cert;
+use blugin\traits\preventextract\PreventExtractTrait;
 use blugin\traits\singleton\SingletonTrait;
 use pocketmine\command\CommandSender;
 use pocketmine\event\inventory\InventoryTransactionEvent;
@@ -54,7 +55,7 @@ use pocketmine\plugin\PluginBase;
 use pocketmine\scheduler\ClosureTask;
 
 class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
-    use TranslatorHolderTrait, BaseCommandTrait, SingletonTrait;
+    use TranslatorHolderTrait, BaseCommandTrait, SingletonTrait, PreventExtractTrait;
 
     public function onLoad(){
         self::$instance = $this;
