@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace blugin\inventorymonitor;
 
 use blugin\lib\command\BaseCommandTrait;
+use blugin\lib\command\constraint\InGameConstraint;
 use blugin\lib\command\listener\AvaliableCommandListener;
 use blugin\lib\command\listener\EnumUpdateListener;
 use blugin\lib\command\overload\Overload;
@@ -73,16 +74,13 @@ class InventoryMonitor extends PluginBase implements Listener, TranslatorHolder{
         EnumUpdateListener::register($this);
 
         //Register main command
-        $overload = (new Overload($command = $this->getBaseCommand()))
+        $command = $this->getBaseCommand()->addConstraint(new InGameConstraint());
+        $overload = (new Overload($command))
             ->addParamater((new PlayerParameter("player"))->setIncludeOffline(true)->setExact(false))
             ->setHandler(function(CommandSender $sender, array $args, Overload $overload) : bool{
                 $command = $overload->getBaseCommand();
-                if(!$sender instanceof Player){
-                    $command->sendMessage($sender, "commands.generic.onlyPlayer");
-                    return true;
-                }
-
                 $monitor = MonitorInstance::load($args["player"]);
+                /** @var Player $sender */
                 $monitor->send($sender, $command->getMessage($sender, "chest.name.main", [$monitor->getPlayerName()]));
                 return true;
             });
