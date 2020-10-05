@@ -58,7 +58,7 @@ class OfflinePlayerInventory extends ContainerInventory{
     ];
 
     /** @var int */
-    private $type;
+    protected $type;
 
     public function __construct(CompoundTag $nbt, int $type){
         $size = self::SIZE[$type];

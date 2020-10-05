@@ -58,16 +58,16 @@ class MonitorInstance{
     ];
 
     /** @var string */
-    private $playerName;
+    protected $playerName;
 
     /** @var \Closure|null */
-    private $inventoryCloseListener = null;
+    protected $inventoryCloseListener = null;
 
     /** @var SlotBasedItemArray[] */
-    private $pages = [];
+    protected $pages = [];
 
     /** @var InvMenuPlus[] */
-    private $menus = [];
+    protected $menus = [];
 
     public function __construct(string $playerName, BaseInventory $mainInventory, BaseInventory $armorInventory, ?BaseInventory $enderChestInventory = null, ?BaseInventory $cursorInventory = null){
         $this->playerName = $playerName;
@@ -130,22 +130,18 @@ class MonitorInstance{
         [$mainInv, $armorInv, $enderInv] = OfflinePlayerInventory::load($server->getOfflinePlayerData($playerName));
         $monitor = self::$instances[$playerName] = new MonitorInstance($playerName, $mainInv, $armorInv, $enderInv);
         //If no one is using the monitor, remove the instance
-        static $onInventoryClose;
-        if(!isset($onInventoryClose)){
-            $onInventoryClose = function(Player $player, Inventory $inventory) use ($server, $monitor, $mainInv, $armorInv, $enderInv) : void{
-                if($this->onInventoryClose($player)){
-                    $inventoryTag = $mainInv->save(new ListTag("Inventory", [], NBT::TAG_Compound));
-                    $inventoryTag = $armorInv->save($inventoryTag);
-                    $enderChestTag = $enderInv->save(new ListTag("EnderChestInventory", [], NBT::TAG_Compound));
+        $monitor->setInventoryCloseListener(function(Player $player, Inventory $inventory) use ($server, $monitor, $mainInv, $armorInv, $enderInv) : void{
+            if($monitor->onInventoryClose($player)){
+                $inventoryTag = $mainInv->save(new ListTag("Inventory", [], NBT::TAG_Compound));
+                $inventoryTag = $armorInv->save($inventoryTag);
+                $enderChestTag = $enderInv->save(new ListTag("EnderChestInventory", [], NBT::TAG_Compound));
 
-                    $namedTag = $server->getOfflinePlayerData($monitor->playerName);
-                    $namedTag->setTag($inventoryTag);
-                    $namedTag->setTag($enderChestTag);
-                    $server->saveOfflinePlayerData($monitor->playerName, $namedTag);
-                }
-            };
-        }
-        $monitor->setInventoryCloseListener($onInventoryClose);
+                $namedTag = $server->getOfflinePlayerData($monitor->playerName);
+                $namedTag->setTag($inventoryTag);
+                $namedTag->setTag($enderChestTag);
+                $server->saveOfflinePlayerData($monitor->playerName, $namedTag);
+            }
+        });
 
         return $monitor;
     }
