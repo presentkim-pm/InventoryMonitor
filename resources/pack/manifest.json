@@ -4,7 +4,7 @@
     "name": "InventoryMonitor UI",
     "description": "Screen of the InventoryMonitor plugin (JSON UI)",
     "uuid": "74e747a6-a1b4-40df-be4e-4ad4db5e931a",
-    "version": [ 6, 0, 1 ],
+    "version": [ 6, 1, 0 ],
     "min_engine_version": [ 1, 21, 0 ]
   },
   "modules": [
@@ -12,7 +12,7 @@
       "type": "resources",
       "description": "InventoryMonitor UI",
       "uuid": "ca3a2c11-b6ce-4f28-a986-617e764b437c",
-      "version": [ 6, 0, 1 ]
+      "version": [ 6, 1, 0 ]
     }
   ]
 }

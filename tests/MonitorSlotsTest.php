@@ -27,12 +27,12 @@ final class MonitorSlotsTest extends TestCase{
 
     public function testUnboundSlots() : void{
         self::assertNull(MonitorSlots::sourceOf(MonitorSlots::DATA));
-        self::assertNull(MonitorSlots::sourceOf(43));
-        self::assertNull(MonitorSlots::sourceOf(44));
-        self::assertTrue(MonitorSlots::isReserved(43));
-        self::assertTrue(MonitorSlots::isReserved(44));
-        self::assertFalse(MonitorSlots::isReserved(45));
-        self::assertFalse(MonitorSlots::isReserved(42));
+        self::assertNull(MonitorSlots::sourceOf(MonitorSlots::MODEL));
+        self::assertNull(MonitorSlots::sourceOf(MonitorSlots::HELD));
+        self::assertSame([42, 43, 44], [MonitorSlots::DATA, MonitorSlots::MODEL, MonitorSlots::HELD]);
+        for($slot = 0; $slot < MonitorSlots::SIZE; ++$slot){
+            self::assertFalse(MonitorSlots::isReserved($slot));
+        }
     }
 
     public function testDocumentedRanges() : void{

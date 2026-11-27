@@ -2,7 +2,7 @@
 name: InventoryMonitor
 main: blugin\inventorymonitor\InventoryMonitor
 src-namespace-prefix: blugin\inventorymonitor
-version: 6.0.1
+version: 6.1.0
 api: [ 5.51.0 ]
 authors: [ Blugin-team, PresentKim ]
 description: Real-time responsive player inventory viewer

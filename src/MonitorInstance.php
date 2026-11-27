@@ -30,14 +30,22 @@ namespace blugin\inventorymonitor;
 use blugin\inventorymonitor\inventory\OfflinePlayerInventory;
 use kim\present\libcontainer\Menu;
 use kim\present\libcontainer\ui\ScreenMenu;
+use pocketmine\data\SavedDataLoadingException;
+use pocketmine\entity\Human;
+use pocketmine\entity\InvalidSkinException;
+use pocketmine\entity\Skin;
 use pocketmine\inventory\CallbackInventoryListener;
+use pocketmine\inventory\PlayerInventory;
 use pocketmine\inventory\Inventory;
 use pocketmine\inventory\InventoryListener;
 use pocketmine\item\Item;
+use pocketmine\item\VanillaItems;
 use pocketmine\player\Player;
+use pocketmine\scheduler\ClosureTask;
 use function array_values;
 use function count;
 use function spl_object_id;
+use function str_repeat;
 use function strtolower;
 
 /**
@@ -79,7 +87,7 @@ final class MonitorInstance{
                 MonitorSlots::SOURCE_OFFHAND => $player->getOffHandInventory(),
                 MonitorSlots::SOURCE_CURSOR => $player->getCursorInventory(),
                 MonitorSlots::SOURCE_ENDER => $player->getEnderInventory(),
-            ], null);
+            ], null, $player->getSkin(), $player->getInventory(), 0);
         }
 
         if(!$includeOffline || !$server->hasOfflinePlayerData($key)){
@@ -91,12 +99,25 @@ final class MonitorInstance{
         }
         $offline = OfflinePlayerInventory::load($data);
         //An offline player has no cursor item, so that slot of the screen stays empty
+        try{
+            $skin = Human::parseSkinNBT($data);
+        }catch(SavedDataLoadingException | InvalidSkinException){
+            $skin = self::defaultSkin();
+        }
         return self::$instances[$key] = new self($plugin, $playerName, [
             MonitorSlots::SOURCE_INVENTORY => $offline->main,
             MonitorSlots::SOURCE_ARMOR => $offline->armor,
             MonitorSlots::SOURCE_OFFHAND => $offline->offHand,
             MonitorSlots::SOURCE_ENDER => $offline->ender,
-        ], $offline);
+        ], $offline, $skin, null, $data->getInt(self::TAG_SELECTED_INVENTORY_SLOT, 0));
+    }
+
+    /** Hotbar slot a player held when the data was saved, see Human::saveNBT() */
+    private const TAG_SELECTED_INVENTORY_SLOT = "SelectedInventorySlot";
+
+    /** A plain gray skin for an offline player whose data has no skin */
+    private static function defaultSkin() : Skin{
+        return new Skin("Standard_Custom", str_repeat("\x80\x80\x80\xff", 64 * 64));
     }
 
     /** @var array<int, MonitorViewer> player object id => viewer */
@@ -104,6 +125,8 @@ final class MonitorInstance{
 
     /** @var array<string, InventoryListener> */
     private array $sourceListeners = [];
+
+    private ?\Closure $heldListener = null;
 
     private bool $disposed = false;
     private bool $dirty = false;
@@ -117,13 +140,53 @@ final class MonitorInstance{
         private readonly InventoryMonitor $plugin,
         private readonly string $playerName,
         private readonly array $sources,
-        private readonly ?OfflinePlayerInventory $offline
+        private readonly ?OfflinePlayerInventory $offline,
+        private readonly Skin $skin,
+        private readonly ?PlayerInventory $heldInventory,
+        private readonly int $offlineHeldIndex
     ){
-        //Only to know whether an offline player's data has to be saved, the screens follow the sources by themselves
+        //The screens follow the sources by themselves; this is for the offline data and the viewers' puppets
         foreach($this->sources as $key => $inventory){
             $inventory->getListeners()->add($this->sourceListeners[$key] = CallbackInventoryListener::onAnyChange(function() : void{
                 $this->dirty = true;
+                $this->updatePuppets();
             }));
+        }
+        $this->heldInventory?->getHeldItemIndexChangeListeners()->add($this->heldListener = function(int $oldIndex) : void{
+            $this->updatePuppets();
+            foreach($this->viewers as $viewer){
+                $this->sendHeldIndex($viewer->screen->getMenu());
+            }
+        });
+    }
+
+    private function heldIndex() : int{
+        return $this->heldInventory?->getHeldItemIndex() ?? $this->offlineHeldIndex;
+    }
+
+    /** "h" + index: a bare number would be read as a number by the screen's expression */
+    private function sendHeldIndex(Menu $menu) : void{
+        $menu->lock(MonitorSlots::HELD)->setItem(MonitorSlots::HELD, VanillaItems::PAPER()->setCustomName("h" . $this->heldIndex()));
+    }
+
+    /** @return list<Item> head, chest, legs, feet, main hand, off hand of the monitored player */
+    private function equipment() : array{
+        $armor = $this->sources[MonitorSlots::SOURCE_ARMOR];
+        $inventory = $this->sources[MonitorSlots::SOURCE_INVENTORY];
+        return [
+            $armor->getItem(0),
+            $armor->getItem(1),
+            $armor->getItem(2),
+            $armor->getItem(3),
+            $inventory->getItem($this->heldIndex()),
+            $this->sources[MonitorSlots::SOURCE_OFFHAND]->getItem(0),
+        ];
+    }
+
+    private function updatePuppets() : void{
+        $equipment = $this->equipment();
+        foreach($this->viewers as $viewer){
+            $viewer->puppet->update($equipment);
         }
     }
 
@@ -153,11 +216,14 @@ final class MonitorInstance{
 
         $lang = $this->plugin->getLanguage();
         $screen = ScreenMenu::create(MonitorSlots::SCREEN_KEY, $title);
-        $viewer = new MonitorViewer($player, $screen);
+        $viewer = new MonitorViewer($player, $screen, new MonitorPuppet($player, $this->skin));
         $this->viewers[spl_object_id($player)] = $viewer;
+        $viewer->puppet->spawn($this->equipment());
+        $puppet = $viewer->puppet;
+        $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(static fn() => $puppet->removeListEntry()), MonitorPuppet::LIST_ENTRY_TICKS);
 
         $menu = $screen->getMenu();
-        $menu->batch(function() use ($menu, $screen, $lang) : void{
+        $menu->batch(function() use ($menu, $screen, $lang, $viewer) : void{
             foreach(MonitorSlots::BINDINGS as $binding){
                 $source = $this->sources[$binding["source"]] ?? null;
                 if($source !== null){
@@ -173,6 +239,13 @@ final class MonitorInstance{
                 $this->playerName,
                 $lang->translate($this->isOnline() ? "monitor.status.online" : "monitor.status.offline")
             ]));
+            //live_horse_renderer takes the id as a string; quoted, the screen's expression keeps it one. Not a DataSlot:
+            //its NUL terminator would stay in the id and the renderer would draw nothing
+            $menu->lock(MonitorSlots::MODEL)->setItem(
+                MonitorSlots::MODEL,
+                VanillaItems::PAPER()->setCustomName('"' . $viewer->puppet->getActorId() . '"')
+            );
+            $this->sendHeldIndex($menu);
         });
 
         $menu->onClose(function(Player $player, Menu $menu) use ($viewer) : void{
@@ -201,6 +274,7 @@ final class MonitorInstance{
             return;
         }
         unset($this->viewers[$id]);
+        $viewer->puppet->despawn();
 
         //The bindings keep the monitored inventories referenced until they are released
         $menu = $viewer->screen->getMenu();
@@ -224,6 +298,10 @@ final class MonitorInstance{
             $this->sources[$key]->getListeners()->remove($listener);
         }
         $this->sourceListeners = [];
+        if($this->heldListener !== null){
+            $this->heldInventory?->getHeldItemIndexChangeListeners()->remove($this->heldListener);
+            $this->heldListener = null;
+        }
 
         $key = strtolower($this->playerName);
         if((self::$instances[$key] ?? null) === $this){

@@ -60,8 +60,12 @@ final class MonitorSlots{
     public const OFFHAND = 40;
     public const CURSOR = 41;
     public const DATA = 42;
-    public const RESERVED_START = 43;
-    public const RESERVED_COUNT = 2;
+    /** Name = the quoted actor id of the viewer's {@see MonitorPuppet}, read by the model renderer */
+    public const MODEL = 43;
+    /** Name = "h" + the hotbar slot the monitored player holds, read by the selection frame */
+    public const HELD = 44;
+    public const RESERVED_START = 45;
+    public const RESERVED_COUNT = 0;
     public const ENDER_START = 45;
     public const ENDER_COUNT = 27;
 

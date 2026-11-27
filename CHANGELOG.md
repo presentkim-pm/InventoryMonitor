@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### ✨ Added
+- The screen is laid out like the vanilla inventory: armor column, the player's model and the offhand, then the main
+  inventory and hotbar; a tab switches these to the ender chest. In the classic UI the viewer's own inventory is drawn
+  beside it.
+- The model is a puppet player sent only to the viewer (under the viewer's feet, removed when the screen closes). It
+  wears the target's skin (an offline player's saved skin), armor, main-hand and off-hand items and follows their
+  changes. Emotes and movements of the target are not shown.
+- The hotbar slot the target holds is framed, and the frame follows the target's selection (an offline player's saved
+  selection).
+- Slots 43 (the model's actor id) and 44 (the held hotbar slot) are data slots now; no slot is reserved.
+- The plugin and its resource pack are 6.1.0.
+
 ## 6.0.1 (2026-11-27)
 
 ### 🐛 Fixed

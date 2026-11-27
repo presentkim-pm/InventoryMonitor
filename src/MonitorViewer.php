@@ -34,7 +34,8 @@ use pocketmine\player\Player;
 final class MonitorViewer{
     public function __construct(
         public readonly Player $player,
-        public readonly ScreenMenu $screen
+        public readonly ScreenMenu $screen,
+        public readonly MonitorPuppet $puppet
     ){
     }
 }

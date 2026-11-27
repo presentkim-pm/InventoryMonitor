@@ -1,5 +1,9 @@
 // Classic (desktop / tablet) UI: puts the InventoryMonitor screen (ui/inventorymonitor.json) into the vanilla small
-// chest screen and hides the vanilla chest cells while it is shown. Nothing is redeclared, see inventorymonitor.json.
+// chest screen and hides the vanilla chest window while it is shown. Nothing is redeclared, see inventorymonitor.json.
+//
+// The screen draws its own window: the target on the left and the viewer's inventory on the right, from the same
+// vanilla collections. So the vanilla window background (with its close button), the chest cells, the player's
+// inventory and the hotbar are all hidden; the path keys are applied by the Windows client (ui_tree shows them hidden).
 {
   "namespace": "chest",
 
@@ -13,8 +17,6 @@
     ]
   },
 
-  // The vanilla window background and its close button: they are drawn above the screen's frame (layer 3) and the
-  // close button would sit on the ender chest cells. The screen draws its own background and close button instead.
   "small_chest_panel/root_panel/common_panel": {
     "modifications": [
       {
@@ -33,9 +35,43 @@
     ]
   },
 
-  // The vanilla chest cells (label + 27 cells) are the top half of the chest panel; the player's own inventory (bottom
-  // half) and the hotbar stay visible. The path key is applied by the Windows client (ui_tree shows the top half hidden).
   "small_chest_panel/root_panel/chest_panel/small_chest_panel_top_half": {
+    "modifications": [
+      {
+        "array_name": "bindings",
+        "operation": "insert_back",
+        "value": [
+          {
+            "binding_type": "view",
+            "source_control_name": "entity_ui_hide_vanilla",
+            "source_property_name": "#entity_ui_vanilla_visible",
+            "target_property_name": "#visible",
+            "binding_condition": "always"
+          }
+        ]
+      }
+    ]
+  },
+
+  "small_chest_panel/root_panel/chest_panel/inventory_panel_bottom_half_with_label": {
+    "modifications": [
+      {
+        "array_name": "bindings",
+        "operation": "insert_back",
+        "value": [
+          {
+            "binding_type": "view",
+            "source_control_name": "entity_ui_hide_vanilla",
+            "source_property_name": "#entity_ui_vanilla_visible",
+            "target_property_name": "#visible",
+            "binding_condition": "always"
+          }
+        ]
+      }
+    ]
+  },
+
+  "small_chest_panel/root_panel/chest_panel/hotbar_grid": {
     "modifications": [
       {
         "array_name": "bindings",

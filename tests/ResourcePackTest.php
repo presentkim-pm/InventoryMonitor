@@ -42,40 +42,42 @@ final class ResourcePackTest extends TestCase{
         self::assertSame(self::pluginVersion(), $manifest['modules'][0]['version']);
     }
 
-    /** @return list<int> the slot numbers of the cells of a layout */
-    private function cellSlots(string $layout) : array{
-        $slots = [];
-        foreach($this->json('ui/inventorymonitor.json')[$layout]['controls'] as $control){
-            $definition = reset($control);
-            if(is_array($definition) && isset($definition['$index'])){
-                $slots[] = $definition['$index'];
-            }
-        }
-        sort($slots);
-        return $slots;
-    }
-
     public function testEverySlotHasACell() : void{
+        $ui = file_get_contents($this->pack . 'ui/inventorymonitor.json');
+        self::assertIsString($ui);
+        preg_match_all('/"\$index":\s*(\d+)/', $ui, $matches);
+        $slots = array_map('intval', $matches[1]);
+        sort($slots);
+
         $expected = [];
         for($slot = 0; $slot < MonitorSlots::SIZE; ++$slot){
             if(MonitorSlots::sourceOf($slot) !== null){
                 $expected[] = $slot;
             }
         }
-        self::assertSame($expected, $this->cellSlots('wide_content'));
-        self::assertSame($expected, $this->cellSlots('tall_content'));
+        self::assertSame($expected, $slots);
     }
 
-    public function testDataSlotHasTheLabel() : void{
+    public function testDataSlotsAreRead() : void{
         $ui = file_get_contents($this->pack . 'ui/inventorymonitor.json');
         self::assertIsString($ui);
         preg_match_all('/"collection_index":\s*(\d+)/', $ui, $matches);
-        self::assertSame([MonitorSlots::DATA], array_map('intval', $matches[1]));
+        self::assertSame(
+            [MonitorSlots::DATA, MonitorSlots::MODEL, MonitorSlots::HELD],
+            array_values(array_unique(array_map('intval', $matches[1])))
+        );
+    }
+
+    public function testEveryHotbarCellHasAHeldFrame() : void{
+        $ui = file_get_contents($this->pack . 'ui/inventorymonitor.json');
+        self::assertIsString($ui);
+        preg_match_all('/"\$held_key":\s*"h(\d)"/', $ui, $matches);
+        self::assertSame(range(0, MonitorSlots::HOTBAR_COUNT - 1), array_map('intval', $matches[1]));
     }
 
     public function testScreenKeyMatchesThePlugin() : void{
         $controls = $this->json('ui/inventorymonitor.json')['overlay']['controls'];
-        foreach(['wide_host', 'tall_host'] as $i => $host){
+        foreach(['classic_host', 'pocket_host'] as $i => $host){
             self::assertStringContainsString(MonitorSlots::SCREEN_KEY, $controls[$i][$host]['ignored']);
         }
     }

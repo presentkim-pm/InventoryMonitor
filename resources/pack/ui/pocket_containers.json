@@ -1,4 +1,4 @@
-// Pocket UI: puts the InventoryMonitor screen (ui/inventorymonitor.json, tall layout) into the vanilla container panel.
+// Pocket UI: puts the InventoryMonitor target panel (ui/inventorymonitor.json) into the vanilla container panel.
 // The panel has two halves: "inventory" (the player's own inventory, left) and "container" (the chest, right). Only the
 // container half and its header are hidden while the screen is shown (the marker control "entity_ui_hide_vanilla"
 // exists only then); the player's inventory, the close button and the background stay, so shift-click works.
@@ -10,7 +10,7 @@
       {
         "array_name": "controls",
         "operation": "insert_back",
-        "value": [ { "inventorymonitor_overlay@inventorymonitor.overlay": { "$im_tall": true } } ]
+        "value": [ { "inventorymonitor_overlay@inventorymonitor.overlay": { "$im_pocket": true } } ]
       }
     ]
   },
