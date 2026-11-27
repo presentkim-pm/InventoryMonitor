@@ -922,16 +922,16 @@
         },
         {
             "name": "presentkim/libcontainer",
-            "version": "0.1.0",
+            "version": "0.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/presentkim-pm/libcontainer.git",
-                "reference": "a14bc5e0287d8020c304e9955ebb07741165727d"
+                "reference": "e343b0223e910d2fe55992212868679def409c60"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/presentkim-pm/libcontainer/zipball/a14bc5e0287d8020c304e9955ebb07741165727d",
-                "reference": "a14bc5e0287d8020c304e9955ebb07741165727d",
+                "url": "https://api.github.com/repos/presentkim-pm/libcontainer/zipball/e343b0223e910d2fe55992212868679def409c60",
+                "reference": "e343b0223e910d2fe55992212868679def409c60",
                 "shasum": ""
             },
             "require": {
@@ -955,9 +955,9 @@
             "description": "Virtual inventory menus (entity containers) for axolotl-pm/PocketMine-MP",
             "support": {
                 "issues": "https://github.com/presentkim-pm/libcontainer/issues",
-                "source": "https://github.com/presentkim-pm/libcontainer/tree/0.1.0"
+                "source": "https://github.com/presentkim-pm/libcontainer/tree/0.1.1"
             },
-            "time": "2026-11-27T12:00:59+00:00"
+            "time": "2026-11-27T12:48:57+00:00"
         },
         {
             "name": "ramsey/collection",
