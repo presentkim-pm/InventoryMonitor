@@ -4,8 +4,9 @@
 
 ### ✨ Added
 - The screen is laid out like the vanilla inventory: armor column, the player's model and the offhand, then the main
-  inventory and hotbar; a tab switches these to the ender chest. In the classic UI the viewer's own inventory is drawn
-  beside it.
+  inventory and hotbar. The tabs "Inventory" and "Ender Chest" stand on the top edge of the target's frame, as in the
+  vanilla tabbed screens, and the frame's title is the target's name and status. In the classic UI the viewer's own
+  inventory is a second frame of the same height beside it, with the close button.
 - The model is a puppet player sent only to the viewer (under the viewer's feet, removed when the screen closes). It
   wears the target's skin (an offline player's saved skin), armor, main-hand and off-hand items and follows their
   changes. Emotes and movements of the target are not shown.

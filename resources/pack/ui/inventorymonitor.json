@@ -22,15 +22,18 @@
 //   43 model entity id (#hover_text, the quoted actor id of the puppet the server spawned for this viewer),
 //   44 held hotbar slot (#hover_text "h<index>"), 45..71 ender chest
 //
-// LAYOUT of the target panel, in GUI pixels from the top-left of its content (162 x 170):
-//   tabs         y=0       "Inventory" and "Ender Chest" (radio toggles, client side only)
-//   armor        x=0       4 cells from y=18, like the vanilla armor column
+// LAYOUT of the target panel, in GUI pixels from the top-left of its content (162 x 152):
+//   armor        x=0       4 cells from y=0, like the vanilla armor column
 //   model        x=20      black 52 x 70 box with the puppet (live_horse_renderer)
 //   offhand      x=76      next to the bottom of the model
-//   name, cursor x=76      name label at the top, the cursor cell under it
-//   items        y=94     inventory tab: 3 rows + hotbar; ender tab: 3 rows of the ender chest
-// Classic UI: the target panel on the left, the viewer's own inventory (vanilla collections) on the right.
-// Pocket UI: the target panel in the vanilla container half (the right half), the viewer's inventory half stays.
+//   cursor       x=144     the last column, beside the model
+//   items        y=76     inventory tab: 3 rows + hotbar; ender tab: 3 rows of the ender chest
+// The frame around it has the name of the target as its title, and the tabs "Inventory" and "Ender Chest" (radio
+// toggles, client side only) stand on its top edge, as in the vanilla tabbed screens.
+// Classic UI: two frames of the same height side by side, the target on the left and the viewer's own inventory (vanilla
+// collections) with the close button on the right.
+// Pocket UI: the target frame in the vanilla container half (the right half); the vanilla inventory half (the left half,
+// with its scrolling grid) stays.
 {
   "namespace": "inventorymonitor",
 
@@ -86,21 +89,23 @@
     "$text|default": ""
   },
 
-  // The name and status of the target, sent by the server as the name of the item in slot 42 (DataSlot).
-  // #hover_text holds the name (and lore); the italic and reset codes of item names are removed, color codes stay.
-  // The server colors the name (light colors such as §b and §7), so the label has a shadow like an item name.
-  "name_label": {
+  // The window title: the name and status of the target, sent by the server as the name of the item in slot 42
+  // (DataSlot). #hover_text holds the name (and lore); the italic and reset codes of item names are removed, color codes
+  // stay. The server colors the name (light colors such as §b and §7), so the label has a shadow like an item name.
+  "title": {
     "type": "stack_panel",
-    "size": [ 86, 20 ],
-    "anchor_from": "top_left",
-    "anchor_to": "top_left",
+    "size": [ "100% - 40px", 10 ],
+    "offset": [ 0, 6 ],
+    "anchor_from": "top_middle",
+    "anchor_to": "top_middle",
     "collection_name": "container_items",
     "controls": [
       {
         "text": {
           "type": "label",
           "layer": 2,
-          "size": [ "100%", 20 ],
+          "size": [ "100%", 10 ],
+          "text_alignment": "center",
           "shadow": true,
           "color": [ 0.25, 0.25, 0.25 ],
           "text": "#text",
@@ -203,16 +208,22 @@
     ]
   },
 
-  // A tab: a radio toggle of the group "inventorymonitor_tabs". The groups below follow the toggle "ender_tab".
+  // A tab: a radio toggle of the group "inventorymonitor_tabs". The pages below follow the toggle "ender_tab".
+  // The face reaches 6 pixels below the tab, over the top edge of the window, so the selected tab joins the window.
   "tab_face": {
-    "type": "image",
-    "texture": "$tab_texture",
+    "type": "panel",
     "size": [ "100%", "100%" ],
     "controls": [
+      { "bg": { "type": "image", "texture": "$tab_texture", "size": [ "100%", "100% + 6px" ], "anchor_from": "top_left", "anchor_to": "top_left" } },
+      { "icon": { "type": "image", "layer": 1, "texture": "$tab_icon", "size": "$tab_icon_size", "offset": [ 4, 0 ], "anchor_from": "left_middle", "anchor_to": "left_middle" } },
       {
         "label": {
           "type": "label",
           "layer": 1,
+          "size": [ "100% - 24px", 10 ],
+          "offset": [ 23, 0 ],
+          "anchor_from": "left_middle",
+          "anchor_to": "left_middle",
           "text": "$tab_text",
           "color": "$tab_text_color",
           "shadow": false
@@ -222,8 +233,8 @@
   },
   "tab": {
     "type": "toggle",
-    "size": [ 81, 14 ],
-    "layer": 2,
+    "size": [ 84, 22 ],
+    "layer": 1,
     "anchor_from": "top_left",
     "anchor_to": "top_left",
     "sound_name": "random.click",
@@ -254,6 +265,35 @@
       { "off_hover@inventorymonitor.tab_face": { "$tab_texture": "textures/ui/TabTopBackHover", "$tab_text_color": [ 1, 1, 1 ] } }
     ]
   },
+  "tabs": {
+    "type": "panel",
+    "size": [ 168, 22 ],
+    "offset": [ 4, -22 ],
+    "layer": 3,
+    "anchor_from": "top_left",
+    "anchor_to": "top_left",
+    "controls": [
+      {
+        "inventory_tab@inventorymonitor.tab": {
+          "$tab_index": 0,
+          "$tab_default": true,
+          "$tab_text": "inventorymonitor.inventory",
+          "$tab_icon": "textures/ui/inventory_icon",
+          "$tab_icon_size": [ 16, 11 ]
+        }
+      },
+      {
+        "ender_tab@inventorymonitor.tab": {
+          "$tab_index": 1,
+          "$tab_default": false,
+          "$tab_text": "inventorymonitor.ender",
+          "$tab_icon": "textures/blocks/ender_chest_front",
+          "$tab_icon_size": [ 14, 14 ],
+          "offset": [ 84, 0 ]
+        }
+      }
+    ]
+  },
 
   // The items of one tab, shown while the "ender_tab" toggle has $tab_state
   "tab_page": {
@@ -266,36 +306,33 @@
     ]
   },
 
-  // The target panel: tabs, armor, model, offhand, name, cursor and the items of the selected tab
+  // The target panel: armor, model, offhand, cursor and the items of the selected tab
   "target": {
     "type": "panel",
-    "size": [ 162, 170 ],
+    "size": [ 162, 152 ],
     "anchor_from": "top_left",
     "anchor_to": "top_left",
     "controls": [
-      { "inventory_tab@inventorymonitor.tab": { "$tab_index": 0, "$tab_default": true, "$tab_text": "inventorymonitor.inventory" } },
-      { "ender_tab@inventorymonitor.tab": { "$tab_index": 1, "$tab_default": false, "$tab_text": "inventorymonitor.ender", "offset": [ 81, 0 ] } },
-      { "model_border@inventorymonitor.model_border": { "offset": [ 19, 18 ] } },
-      { "model@inventorymonitor.model": { "offset": [ 20, 19 ] } },
-      { "name@inventorymonitor.name_label": { "offset": [ 76, 18 ] } },
+      { "model_border@inventorymonitor.model_border": { "offset": [ 19, 0 ] } },
+      { "model@inventorymonitor.model": { "offset": [ 20, 1 ] } },
       {
         "cursor_caption@inventorymonitor.caption": {
           "$text": "inventorymonitor.cursor",
           "size": [ 40, 10 ],
           "text_alignment": "right",
-          "offset": [ 100, 58 ]
+          "offset": [ 100, 40 ]
         }
       },
-      { "cell_36@inventorymonitor.cell": { "$index": 36, "offset": [ 0, 18 ], "$overlay": "inventorymonitor.helmet" } },
-      { "cell_37@inventorymonitor.cell": { "$index": 37, "offset": [ 0, 36 ], "$overlay": "inventorymonitor.chestplate" } },
-      { "cell_38@inventorymonitor.cell": { "$index": 38, "offset": [ 0, 54 ], "$overlay": "inventorymonitor.leggings" } },
-      { "cell_39@inventorymonitor.cell": { "$index": 39, "offset": [ 0, 72 ], "$overlay": "inventorymonitor.boots" } },
-      { "cell_40@inventorymonitor.cell": { "$index": 40, "offset": [ 76, 72 ], "$overlay": "inventorymonitor.shield" } },
-      { "cell_41@inventorymonitor.cell": { "$index": 41, "offset": [ 144, 54 ] } },
+      { "cell_36@inventorymonitor.cell": { "$index": 36, "offset": [ 0, 0 ], "$overlay": "inventorymonitor.helmet" } },
+      { "cell_37@inventorymonitor.cell": { "$index": 37, "offset": [ 0, 18 ], "$overlay": "inventorymonitor.chestplate" } },
+      { "cell_38@inventorymonitor.cell": { "$index": 38, "offset": [ 0, 36 ], "$overlay": "inventorymonitor.leggings" } },
+      { "cell_39@inventorymonitor.cell": { "$index": 39, "offset": [ 0, 54 ], "$overlay": "inventorymonitor.boots" } },
+      { "cell_40@inventorymonitor.cell": { "$index": 40, "offset": [ 76, 54 ], "$overlay": "inventorymonitor.shield" } },
+      { "cell_41@inventorymonitor.cell": { "$index": 41, "offset": [ 144, 36 ] } },
       {
         "inventory_page@inventorymonitor.tab_page": {
           "$tab_rule": "(not #toggle_state)",
-          "offset": [ 0, 94 ],
+          "offset": [ 0, 76 ],
           "controls": [
             { "cell_9@inventorymonitor.cell": { "$index": 9, "offset": [ 0, 0 ] } },
             { "cell_10@inventorymonitor.cell": { "$index": 10, "offset": [ 18, 0 ] } },
@@ -348,7 +385,7 @@
       {
         "ender_page@inventorymonitor.tab_page": {
           "$tab_rule": "#toggle_state",
-          "offset": [ 0, 94 ],
+          "offset": [ 0, 76 ],
           "controls": [
             { "cell_45@inventorymonitor.cell": { "$index": 45, "offset": [ 0, 0 ] } },
             { "cell_46@inventorymonitor.cell": { "$index": 46, "offset": [ 18, 0 ] } },
@@ -425,12 +462,15 @@
     "property_bag": { "#entity_ui_vanilla_visible": false }
   },
 
-  // A frame (a vanilla dialog texture, 9-sliced)
-  "frame": {
+  // A panel (a vanilla dialog texture, 9-sliced), moved down by half the tab height so the tabs on the top edge of the
+  // target panel stay on the screen
+  "window": {
     "type": "image",
     "texture": "textures/ui/dialog_background_opaque",
     "nineslice_size": 4,
-    "layer": 0
+    "layer": 0,
+    "size": [ "100%", "100%" ],
+    "offset": [ 0, 11 ]
   },
 
   // The whole screen. layer 1 on purpose: the item renderer does not draw above a layer sum of about 99.
@@ -446,28 +486,30 @@
       {
         "classic_host": {
           "type": "panel",
-          "size": [ 356, 184 ],
+          "size": [ 356, 179 ],
           "ignored": "((($im_title - '§b§w§i§m') = $im_title) or $im_pocket)",
           "controls": [
             { "entity_ui_hide_vanilla@inventorymonitor.entity_ui_hide_vanilla": {} },
             {
-              "target_frame@inventorymonitor.frame": {
-                "size": [ 176, 184 ],
+              "target_window@inventorymonitor.window": {
+                "size": [ 176, 179 ],
                 "anchor_from": "top_left",
                 "anchor_to": "top_left",
                 "controls": [
-                  { "content@inventorymonitor.target": { "offset": [ 7, 7 ] } }
+                  { "tabs@inventorymonitor.tabs": {} },
+                  { "title@inventorymonitor.title": {} },
+                  { "target@inventorymonitor.target": { "offset": [ 7, 20 ] } }
                 ]
               }
             },
             {
-              "own_frame@inventorymonitor.frame": {
-                "size": [ 176, 101 ],
+              "own_window@inventorymonitor.window": {
+                "size": [ 176, 179 ],
                 "anchor_from": "top_right",
                 "anchor_to": "top_right",
                 "controls": [
-                  { "content@inventorymonitor.own_inventory": { "offset": [ 7, 7 ] } },
-                  { "close@common.close_button": { "layer": 3 } }
+                  { "close@common.close_button": { "layer": 3 } },
+                  { "own@inventorymonitor.own_inventory": { "offset": [ 7, 85 ] } }
                 ]
               }
             }
@@ -484,7 +526,23 @@
           "ignored": "((($im_title - '§b§w§i§m') = $im_title) or (not $im_pocket))",
           "controls": [
             { "entity_ui_hide_vanilla@inventorymonitor.entity_ui_hide_vanilla": {} },
-            { "content@inventorymonitor.target": { "anchor_from": "center", "anchor_to": "center" } }
+            {
+              "frame": {
+                "type": "panel",
+                "size": [ 176, 179 ],
+                "controls": [
+                  {
+                    "window@inventorymonitor.window": {
+                      "controls": [
+                        { "tabs@inventorymonitor.tabs": {} },
+                        { "title@inventorymonitor.title": {} },
+                        { "target@inventorymonitor.target": { "offset": [ 7, 20 ] } }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
           ]
         }
       }

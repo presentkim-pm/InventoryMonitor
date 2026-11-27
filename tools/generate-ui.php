@@ -13,18 +13,20 @@ declare(strict_types=1);
 
 const CELL = 18;
 const PAD = 7;                      // space between a frame and its content, as in the vanilla chest screen
-const GAP = 4;                      // space between the target panel and the viewer's inventory (classic UI)
+const GAP = 4;                      // space between the target frame and the viewer's inventory frame (classic UI)
+const TITLE_H = 20;                 // the title row of the target frame
 const CONTENT_W = 9 * CELL;         // 162
-const TAB_W = 81;                   // two tabs fill the content width
-const EQUIP_Y = 18;                 // armor column and model, below the tabs
+const TAB_W = 84;                   // two tabs and TABS_X fit on the target frame (CONTENT_W + 2 * PAD)
+const TABS_X = 4;
+const TAB_H = 22;                   // the tabs stand on the top edge of the window
 const MODEL_X = CELL + 2;           // the model box (52 x 70) right of the armor column, as in the vanilla screen
 const MODEL_SIZE = 32;              // the renderer control; the model is about twice as tall, clipped by the box
 const MODEL_Y = 4;                  // the renderer inside the box (the player's head is at the top of the control)
 const OFFHAND_X = MODEL_X + 52 + 4; // right of the model box
-const OFFHAND_Y = EQUIP_Y + 3 * CELL; // the bottom row of the armor column
+const OFFHAND_Y = 3 * CELL;         // the bottom row of the armor column
 const CURSOR_X = CONTENT_W - CELL;  // the last column
-const CURSOR_Y = EQUIP_Y + 2 * CELL;
-const ITEMS_Y = EQUIP_Y + 4 * CELL + 4; // below the armor column
+const CURSOR_Y = 2 * CELL;
+const ITEMS_Y = 4 * CELL + 4;       // below the armor column
 const PAGE_H = 3 * CELL + 4 + CELL; // 3 rows, a gap and the hotbar
 const CONTENT_H = ITEMS_Y + PAGE_H;
 const OWN_H = 69 + CELL;            // caption, 3 rows, hotbar (see own_inventory)
@@ -40,7 +42,7 @@ function cellLine(int $index, int $x, int $y, ?string $silhouette, string $inden
 function equipCells() : array{
     $lines = [];
     for($i = 0; $i < 4; ++$i){
-        $lines[] = cellLine(36 + $i, 0, EQUIP_Y + $i * CELL, ARMOR_SILHOUETTES[$i], '      ');
+        $lines[] = cellLine(36 + $i, 0, $i * CELL, ARMOR_SILHOUETTES[$i], '      ');
     }
     $lines[] = cellLine(40, OFFHAND_X, OFFHAND_Y, "shield", '      ');
     $lines[] = cellLine(41, CURSOR_X, CURSOR_Y, null, '      ');
@@ -71,7 +73,6 @@ function enderCells() : array{
     return $lines;
 }
 
-$frameW = CONTENT_W + 2 * PAD;
 $template = file_get_contents(__DIR__ . '/inventorymonitor.json.tpl');
 $cells = [equipCells(), inventoryCells(), enderCells()];
 file_put_contents(
@@ -81,25 +82,27 @@ file_put_contents(
         '{{CONTENT_W}}' => (string) CONTENT_W,
         '{{CONTENT_H}}' => (string) CONTENT_H,
         '{{TAB_W}}' => (string) TAB_W,
-        '{{EQUIP_Y}}' => (string) EQUIP_Y,
+        '{{TAB_H}}' => (string) TAB_H,
+        '{{TABS_W}}' => (string) (2 * TAB_W),
+        '{{TABS_X}}' => (string) TABS_X,
+        '{{TABS_Y}}' => (string) -TAB_H,
         '{{MODEL_X}}' => (string) MODEL_X,
-        '{{MODEL_BOX_Y}}' => (string) (EQUIP_Y + 1),
         '{{MODEL_BORDER_X}}' => (string) (MODEL_X - 1),
-        '{{MODEL_BORDER_Y}}' => (string) EQUIP_Y,
         '{{MODEL_SIZE}}' => (string) MODEL_SIZE,
         '{{MODEL_Y}}' => (string) MODEL_Y,
         '{{OFFHAND_X}}' => (string) OFFHAND_X,
-        '{{NAME_Y}}' => (string) EQUIP_Y,
-        '{{NAME_W}}' => (string) (CONTENT_W - OFFHAND_X),
+        '{{CURSOR_X}}' => (string) CURSOR_X,
         '{{CURSOR_CAPTION_X}}' => (string) (CURSOR_X - 44),
         '{{CURSOR_CAPTION_Y}}' => (string) (CURSOR_Y + 4),
         '{{ITEMS_Y}}' => (string) ITEMS_Y,
         '{{PAGE_H}}' => (string) PAGE_H,
         '{{OWN_H}}' => (string) OWN_H,
-        '{{FRAME_W}}' => (string) $frameW,
-        '{{FRAME_H}}' => (string) (CONTENT_H + 2 * PAD),
-        '{{OWN_FRAME_H}}' => (string) (OWN_H + 2 * PAD),
-        '{{CLASSIC_W}}' => (string) (2 * $frameW + GAP),
+        '{{TITLE_H}}' => (string) TITLE_H,
+        '{{OWN_Y}}' => (string) (TITLE_H + CONTENT_H - OWN_H),
+        '{{WINDOW_H}}' => (string) (TITLE_H + CONTENT_H + PAD),
+        '{{WINDOW_Y}}' => (string) intdiv(TAB_H, 2),
+        '{{PANEL_W}}' => (string) (CONTENT_W + 2 * PAD),
+        '{{CLASSIC_W}}' => (string) (2 * (CONTENT_W + 2 * PAD) + GAP),
         '{{EQUIP_CELLS}}' => implode(",\n", $cells[0]),
         '{{INVENTORY_CELLS}}' => implode(",\n", $cells[1]),
         '{{ENDER_CELLS}}' => implode(",\n", $cells[2]),
