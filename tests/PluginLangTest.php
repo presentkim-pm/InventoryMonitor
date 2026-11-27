@@ -23,7 +23,7 @@ final class PluginLangTest extends TestCase{
     public function testBundledLanguagesLoad() : void{
         $eng = new PluginLang($this->data, $this->resources, 'eng', $this->logger());
         self::assertSame('English', $eng->getName());
-        self::assertSame("x's Inv", $eng->translate('chest.name.main', ['x']));
+        self::assertSame("x's Inv", $eng->translate('monitor.title', ['x']));
 
         $kor = new PluginLang($this->data, $this->resources, 'KOR', $this->logger());
         self::assertSame('kor', $kor->getLang());

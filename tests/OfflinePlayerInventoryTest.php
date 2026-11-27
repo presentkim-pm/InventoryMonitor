@@ -24,6 +24,7 @@ final class OfflinePlayerInventoryTest extends TestCase{
         $nbt->setTag("EnderChestInventory", new ListTag([
             VanillaItems::GOLD_INGOT()->setCount(7)->nbtSerialize(26),
         ], NBT::TAG_Compound));
+        $nbt->setTag("OffHandItem", VanillaItems::TOTEM()->nbtSerialize());
         $nbt->setInt("SelectedInventorySlot", 4);
 
         $offline = OfflinePlayerInventory::load($nbt);
@@ -37,11 +38,14 @@ final class OfflinePlayerInventoryTest extends TestCase{
         self::assertTrue($offline->armor->getItem(0)->equals(VanillaItems::DIAMOND_HELMET()));
         self::assertTrue($offline->armor->getItem(3)->equals(VanillaItems::IRON_BOOTS()));
         self::assertSame(7, $offline->ender->getItem(26)->getCount());
+        self::assertSame(1, $offline->offHand->getSize());
+        self::assertTrue($offline->offHand->getItem(0)->equals(VanillaItems::TOTEM()));
 
         //edit and save into the data, keeping the other tags
         $offline->main->setItem(1, VanillaItems::BREAD());
         $offline->armor->setItem(0, VanillaItems::AIR());
         $offline->ender->clearAll();
+        $offline->offHand->setItem(0, VanillaItems::ARROW());
         $offline->save($nbt);
         self::assertSame(4, $nbt->getInt("SelectedInventorySlot"));
 
@@ -51,6 +55,12 @@ final class OfflinePlayerInventoryTest extends TestCase{
         self::assertTrue($reloaded->armor->getItem(0)->isNull());
         self::assertTrue($reloaded->armor->getItem(3)->equals(VanillaItems::IRON_BOOTS()));
         self::assertCount(0, $reloaded->ender->getContents());
+        self::assertTrue($reloaded->offHand->getItem(0)->equals(VanillaItems::ARROW()));
+
+        //an empty off-hand removes the tag
+        $reloaded->offHand->clearAll();
+        $reloaded->save($nbt);
+        self::assertNull($nbt->getTag("OffHandItem"));
 
         //the saved slots follow the server's layout: inventory from 9, armor from 100
         $slots = [];
@@ -66,5 +76,6 @@ final class OfflinePlayerInventoryTest extends TestCase{
         self::assertCount(0, $offline->main->getContents());
         self::assertCount(0, $offline->armor->getContents());
         self::assertCount(0, $offline->ender->getContents());
+        self::assertCount(0, $offline->offHand->getContents());
     }
 }

@@ -40,6 +40,7 @@ use pocketmine\nbt\tag\ListTag;
 final class OfflinePlayerInventory{
     public const TAG_INVENTORY = "Inventory";
     public const TAG_ENDER_CHEST = "EnderChestInventory";
+    public const TAG_OFF_HAND = "OffHandItem";
     public const TAG_SLOT = "Slot";
 
     public const MAIN_SIZE = 36;
@@ -48,11 +49,13 @@ final class OfflinePlayerInventory{
     public const ARMOR_SIZE = 4;
     public const ARMOR_OFFSET = 100;
     public const ENDER_SIZE = 27;
+    public const OFF_HAND_SIZE = 1;
 
     public function __construct(
         public readonly SimpleInventory $main,
         public readonly SimpleInventory $armor,
-        public readonly SimpleInventory $ender
+        public readonly SimpleInventory $ender,
+        public readonly SimpleInventory $offHand
     ){}
 
     public static function load(CompoundTag $nbt) : self{
@@ -75,10 +78,14 @@ final class OfflinePlayerInventory{
             }
         }
 
+        $offHandTag = $nbt->getCompoundTag(self::TAG_OFF_HAND);
+        $offHand = $offHandTag === null ? [] : [0 => Item::safeNbtDeserialize($offHandTag, "Offline off-hand item")];
+
         return new self(
             self::createInventory(self::MAIN_SIZE, $main),
             self::createInventory(self::ARMOR_SIZE, $armor),
-            self::createInventory(self::ENDER_SIZE, $ender)
+            self::createInventory(self::ENDER_SIZE, $ender),
+            self::createInventory(self::OFF_HAND_SIZE, $offHand)
         );
     }
 
@@ -91,7 +98,7 @@ final class OfflinePlayerInventory{
         return $inventory;
     }
 
-    /** Writes the inventories into the saved data, the other tags (offhand, held slot, ...) are kept */
+    /** Writes the inventories into the saved data, the other tags (held slot, ...) are kept */
     public function save(CompoundTag $nbt) : void{
         $inventoryTag = new ListTag([], NBT::TAG_Compound);
         foreach($this->main->getContents() as $slot => $item){
@@ -107,5 +114,13 @@ final class OfflinePlayerInventory{
             $enderTag->push($item->nbtSerialize($slot));
         }
         $nbt->setTag(self::TAG_ENDER_CHEST, $enderTag);
+
+        //Like Human::saveNBT(), the tag is only there when the off-hand is not empty
+        $offHand = $this->offHand->getItem(0);
+        if($offHand->isNull()){
+            $nbt->removeTag(self::TAG_OFF_HAND);
+        }else{
+            $nbt->setTag(self::TAG_OFF_HAND, $offHand->nbtSerialize());
+        }
     }
 }

@@ -28,14 +28,12 @@ declare(strict_types=1);
 namespace blugin\inventorymonitor;
 
 use blugin\inventorymonitor\inventory\OfflinePlayerInventory;
-use kim\present\libcontainer\Click;
 use kim\present\libcontainer\Menu;
-use pocketmine\block\VanillaBlocks;
+use kim\present\libcontainer\ui\ScreenMenu;
 use pocketmine\inventory\CallbackInventoryListener;
 use pocketmine\inventory\Inventory;
 use pocketmine\inventory\InventoryListener;
 use pocketmine\item\Item;
-use pocketmine\item\VanillaItems;
 use pocketmine\player\Player;
 use function array_values;
 use function count;
@@ -43,11 +41,11 @@ use function spl_object_id;
 use function strtolower;
 
 /**
- * A monitored player (online or offline) and the menus of the players who are watching it.
+ * A monitored player (online or offline) and the screens of the players who are watching it.
  *
- * The menu inventory of every viewer is kept in sync with the monitored inventories in both directions:
- *  - a change of the monitored inventory is shown in the menus,
- *  - an item the viewer moves in a synchronized slot of the menu is written to the monitored inventory.
+ * Every viewer has a {@see ScreenMenu} whose slots are bound to the monitored inventories (see {@see MonitorSlots}):
+ * libcontainer keeps both sides in sync in real time. This class only wires the bindings, follows the lifecycle
+ * (the last viewer closing ends the instance) and saves the data of an offline player.
  */
 final class MonitorInstance{
     /** @var array<string, self> lower-cased player name => instance */
@@ -76,10 +74,11 @@ final class MonitorInstance{
         $player = $server->getPlayerExact($playerName);
         if($player !== null){
             return self::$instances[$key] = new self($plugin, $player->getName(), [
-                MonitorLayout::SOURCE_MAIN => $player->getInventory(),
-                MonitorLayout::SOURCE_ARMOR => $player->getArmorInventory(),
-                MonitorLayout::SOURCE_ENDER => $player->getEnderInventory(),
-                MonitorLayout::SOURCE_CURSOR => $player->getCursorInventory(),
+                MonitorSlots::SOURCE_INVENTORY => $player->getInventory(),
+                MonitorSlots::SOURCE_ARMOR => $player->getArmorInventory(),
+                MonitorSlots::SOURCE_OFFHAND => $player->getOffHandInventory(),
+                MonitorSlots::SOURCE_CURSOR => $player->getCursorInventory(),
+                MonitorSlots::SOURCE_ENDER => $player->getEnderInventory(),
             ], null);
         }
 
@@ -91,10 +90,12 @@ final class MonitorInstance{
             return null;
         }
         $offline = OfflinePlayerInventory::load($data);
+        //An offline player has no cursor item, so that slot of the screen stays empty
         return self::$instances[$key] = new self($plugin, $playerName, [
-            MonitorLayout::SOURCE_MAIN => $offline->main,
-            MonitorLayout::SOURCE_ARMOR => $offline->armor,
-            MonitorLayout::SOURCE_ENDER => $offline->ender,
+            MonitorSlots::SOURCE_INVENTORY => $offline->main,
+            MonitorSlots::SOURCE_ARMOR => $offline->armor,
+            MonitorSlots::SOURCE_OFFHAND => $offline->offHand,
+            MonitorSlots::SOURCE_ENDER => $offline->ender,
         ], $offline);
     }
 
@@ -104,18 +105,13 @@ final class MonitorInstance{
     /** @var array<string, InventoryListener> */
     private array $sourceListeners = [];
 
-    /** > 0 while the menus are being written by the monitor itself, so that the writes are not mistaken for the viewers' */
-    private int $refreshing = 0;
-
     private bool $disposed = false;
     private bool $dirty = false;
 
-    private readonly Item $borderItem;
-
     /**
-     * @param array<string, Inventory> $sources monitored inventories by {@see MonitorLayout}::SOURCE_* key
+     * @param array<string, Inventory> $sources monitored inventories by {@see MonitorSlots}::SOURCE_* key
      * @param OfflinePlayerInventory|null $offline set when the data comes from the player data file, it is saved when
-     *                                             the last viewer closes the menu
+     *                                             the last viewer closes the screen
      */
     private function __construct(
         private readonly InventoryMonitor $plugin,
@@ -123,23 +119,20 @@ final class MonitorInstance{
         private readonly array $sources,
         private readonly ?OfflinePlayerInventory $offline
     ){
-        $lang = $plugin->getLanguage();
-        $this->borderItem = VanillaBlocks::IRON_BARS()->asItem()->setCustomName($lang->translate("chest.slot.border"));
-
+        //Only to know whether an offline player's data has to be saved, the screens follow the sources by themselves
         foreach($this->sources as $key => $inventory){
-            $inventory->getListeners()->add($this->sourceListeners[$key] = new CallbackInventoryListener(
-                function(Inventory $unused, int $slot, Item $unused2) use ($key) : void{
-                    $this->onSourceSlotChange($key, $slot);
-                },
-                function(Inventory $unused, array $unused2) use ($key) : void{
-                    $this->onSourceContentChange($key);
-                }
-            ));
+            $inventory->getListeners()->add($this->sourceListeners[$key] = CallbackInventoryListener::onAnyChange(function() : void{
+                $this->dirty = true;
+            }));
         }
     }
 
     public function getPlayerName() : string{
         return $this->playerName;
+    }
+
+    public function isOnline() : bool{
+        return $this->offline === null;
     }
 
     /** @return MonitorViewer[] */
@@ -151,37 +144,46 @@ final class MonitorInstance{
         return isset($this->viewers[spl_object_id($player)]);
     }
 
-    /** Opens the monitor menu for the player */
-    public function send(Player $player, string $menuName) : void{
+    /** Opens the monitor screen for the player */
+    public function send(Player $player, string $title) : void{
         $previous = $this->viewers[spl_object_id($player)] ?? null;
         if($previous !== null){
             $this->removeViewer($previous, false);
         }
 
-        $menu = Menu::chest($menuName);
-        $viewer = new MonitorViewer($player, $menu, MonitorPage::Inventory1, isset($this->sources[MonitorLayout::SOURCE_CURSOR]));
+        $lang = $this->plugin->getLanguage();
+        $screen = ScreenMenu::create(MonitorSlots::SCREEN_KEY, $title);
+        $viewer = new MonitorViewer($player, $screen);
         $this->viewers[spl_object_id($player)] = $viewer;
 
-        $this->applyPage($viewer);
-        $viewer->menuListener = new CallbackInventoryListener(
-            function(Inventory $inventory, int $slot, Item $unused) use ($viewer) : void{
-                $this->onMenuSlotChange($viewer, $slot);
-            },
-            function(Inventory $inventory, array $unused) use ($viewer) : void{
-                $this->onMenuContentChange($viewer);
+        $menu = $screen->getMenu();
+        $menu->batch(function() use ($menu, $screen, $lang) : void{
+            foreach(MonitorSlots::BINDINGS as $binding){
+                $source = $this->sources[$binding["source"]] ?? null;
+                if($source !== null){
+                    $menu->bind($source, $binding["offset"], $binding["sourceStart"], $binding["count"], $binding["readOnly"]);
+                }
             }
-        );
-        $menu->getInventory()->getListeners()->add($viewer->menuListener);
+            //Armor slots only accept the matching armor piece
+            for($i = 0; $i < MonitorSlots::ARMOR_COUNT; ++$i){
+                $menu->accept(MonitorSlots::ARMOR_START + $i, static fn(Item $item) : bool => ArmorSlotRule::accepts($item, $i));
+            }
+            //Everything else (data slot, reserved slots, a missing cursor) stays locked
+            $screen->data(MonitorSlots::DATA, $lang->translate("monitor.label", [
+                $this->playerName,
+                $lang->translate($this->isOnline() ? "monitor.status.online" : "monitor.status.offline")
+            ]));
+        });
 
         $menu->onClose(function(Player $player, Menu $menu) use ($viewer) : void{
             $this->removeViewer($viewer);
         });
-        if(!$menu->open($player)){
+        if(!$screen->open($player)){
             $this->removeViewer($viewer);
         }
     }
 
-    /** Closes the menus of all viewers, e.g. when the monitored player joins or leaves */
+    /** Closes the screens of all viewers, e.g. when the monitored player joins or leaves */
     public function closeAll() : void{
         foreach($this->getViewers() as $viewer){
             $this->removeViewer($viewer);
@@ -199,10 +201,13 @@ final class MonitorInstance{
             return;
         }
         unset($this->viewers[$id]);
-        if($viewer->menuListener !== null){
-            $viewer->menu->getInventory()->getListeners()->remove($viewer->menuListener);
-            $viewer->menuListener = null;
+
+        //The bindings keep the monitored inventories referenced until they are released
+        $menu = $viewer->screen->getMenu();
+        foreach($this->sources as $source){
+            $menu->unbind($source);
         }
+
         if($disposeIfLast && count($this->viewers) === 0){
             $this->dispose();
         }
@@ -234,137 +239,6 @@ final class MonitorInstance{
             }
             $this->offline->save($data);
             $server->saveOfflinePlayerData($key, $data);
-        }
-    }
-
-    /** The viewer changed a slot of the menu: write it to the monitored inventory */
-    private function onMenuSlotChange(MonitorViewer $viewer, int $slot) : void{
-        if($this->refreshing > 0){
-            return;
-        }
-        $definition = $viewer->layout->slots[$slot] ?? null;
-        if($definition === null || $definition->kind !== SlotKind::Sync || $definition->source === null){
-            return;
-        }
-        $source = $this->sources[$definition->source] ?? null;
-        $item = $viewer->menu->getInventory()->getItem($slot);
-        if($source !== null && !$source->getItem($definition->sourceSlot)->equalsExact($item)){
-            $source->setItem($definition->sourceSlot, $item);
-        }
-    }
-
-    private function onMenuContentChange(MonitorViewer $viewer) : void{
-        if($this->refreshing > 0){
-            return;
-        }
-        foreach($viewer->layout->slots as $slot => $definition){
-            $this->onMenuSlotChange($viewer, $slot);
-        }
-    }
-
-    private function onSourceSlotChange(string $source, int $sourceSlot) : void{
-        $this->dirty = true;
-        foreach($this->viewers as $viewer){
-            $slot = $viewer->layout->slotOf($source, $sourceSlot);
-            if($slot !== null){
-                $this->refreshSlot($viewer, $slot);
-            }
-        }
-    }
-
-    private function onSourceContentChange(string $source) : void{
-        $this->dirty = true;
-        foreach($this->viewers as $viewer){
-            foreach($viewer->layout->slots as $slot => $definition){
-                if($definition->source === $source){
-                    $this->refreshSlot($viewer, $slot);
-                }
-            }
-        }
-    }
-
-    private function switchPage(MonitorViewer $viewer, MonitorPage $page) : void{
-        if(($this->viewers[spl_object_id($viewer->player)] ?? null) !== $viewer){
-            return;
-        }
-        $viewer->setPage($page);
-        $this->applyPage($viewer);
-    }
-
-    /**
-     * Sets the slot rules of the menu for the page of the viewer (synchronized slots are free, armor slots only take
-     * the matching armor piece, the page buttons are buttons, the rest is locked) and fills the slots.
-     */
-    private function applyPage(MonitorViewer $viewer) : void{
-        $menu = $viewer->menu;
-        ++$this->refreshing;
-        try{
-            foreach($viewer->layout->slots as $slot => $definition){
-                $menu->removeButton($slot);
-                $menu->lock($slot);
-                switch($definition->kind){
-                    case SlotKind::Sync:
-                        if($definition->source === MonitorLayout::SOURCE_ARMOR){
-                            $armorSlot = $definition->sourceSlot;
-                            $menu->accept($slot, static fn(Item $item) : bool => ArmorSlotRule::accepts($item, $armorSlot));
-                        }else{
-                            $menu->unlock($slot);
-                        }
-                        break;
-                    case SlotKind::Previous:
-                    case SlotKind::Next:
-                        $target = $definition->target;
-                        if($target !== null){
-                            $menu->setButton($slot, $this->itemFor($viewer, $definition), function(Click $click) use ($viewer, $target) : void{
-                                $this->switchPage($viewer, $target);
-                            });
-                        }
-                        break;
-                }
-            }
-        }finally{
-            --$this->refreshing;
-        }
-        $this->refreshAll($viewer);
-    }
-
-    private function refreshAll(MonitorViewer $viewer) : void{
-        foreach($viewer->layout->slots as $slot => $definition){
-            $this->refreshSlot($viewer, $slot);
-        }
-    }
-
-    /** The item a menu slot shows for its definition */
-    private function itemFor(MonitorViewer $viewer, SlotDefinition $definition) : Item{
-        $lang = $this->plugin->getLanguage();
-        return match($definition->kind){
-            SlotKind::Border => $this->borderItem,
-            SlotKind::Previous => VanillaItems::ARROW()->setCustomName($lang->translate("chest.slot.previous")),
-            SlotKind::Next => VanillaItems::ARROW()->setCustomName($lang->translate("chest.slot.next")),
-            SlotKind::Indicator => ($viewer->getPage() === MonitorPage::Armor ? VanillaItems::DIAMOND_CHESTPLATE() : (
-                $viewer->getPage() === MonitorPage::Ender1 || $viewer->getPage() === MonitorPage::Ender2 ? VanillaBlocks::ENDER_CHEST()->asItem() : VanillaBlocks::CHEST()->asItem()
-            ))->setCustomName($lang->translate("chest.slot.page", [
-                $viewer->getPage()->number(),
-                count(MonitorPage::cases()),
-                $lang->translate("chest.page." . $viewer->getPage()->label())
-            ])),
-            default => ($this->sources[$definition->source ?? ""] ?? null)?->getItem($definition->sourceSlot) ?? $this->borderItem,
-        };
-    }
-
-    /** Makes the menu slot show what its definition says */
-    private function refreshSlot(MonitorViewer $viewer, int $slot) : void{
-        $item = $this->itemFor($viewer, $viewer->layout->slots[$slot]);
-
-        $inventory = $viewer->menu->getInventory();
-        if($inventory->getItem($slot)->equalsExact($item)){
-            return;
-        }
-        ++$this->refreshing;
-        try{
-            $inventory->setItem($slot, $item);
-        }finally{
-            --$this->refreshing;
         }
     }
 }

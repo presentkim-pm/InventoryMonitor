@@ -29,6 +29,9 @@ namespace blugin\inventorymonitor;
 
 use blugin\inventorymonitor\lang\PluginLang;
 use kim\present\libcontainer\LibContainer;
+use kim\present\libcontainer\ui\Screen;
+use kim\present\libcontainer\ui\Screens;
+use kim\present\register\resourcepack\ResourcePackRegister;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerPreLoginEvent;
 use pocketmine\event\player\PlayerQuitEvent;
@@ -37,6 +40,8 @@ use pocketmine\permission\PermissionManager;
 use pocketmine\permission\PermissionParser;
 use pocketmine\permission\PermissionParserException;
 use pocketmine\plugin\PluginBase;
+use pocketmine\resourcepacks\ResourcePack;
+use pocketmine\resourcepacks\ResourcePackException;
 use function array_filter;
 use function array_values;
 use function file_exists;
@@ -56,7 +61,11 @@ final class InventoryMonitor extends PluginBase implements Listener{
         return self::$instance ?? throw new \LogicException("InventoryMonitor is not loaded");
     }
 
+    /** Folder of the bundled resource pack in `resources/` */
+    public const RESOURCE_PACK = "pack";
+
     private PluginLang $language;
+    private ?ResourcePack $resourcePack = null;
 
     protected function onLoad() : void{
         self::$instance = $this;
@@ -64,6 +73,21 @@ final class InventoryMonitor extends PluginBase implements Listener{
 
     protected function onEnable() : void{
         LibContainer::register($this);
+
+        //The screen the bundled resource pack draws, see MonitorSlots
+        if(!Screens::has(MonitorSlots::SCREEN_KEY)){
+            Screens::register(new Screen(MonitorSlots::SCREEN_KEY, MonitorSlots::SIZE));
+        }
+
+        //Send the bundled resource pack to every player, and require it: the screen is only drawn with it
+        try{
+            $this->resourcePack = ResourcePackRegister::registerFromResource($this, self::RESOURCE_PACK);
+        }catch(ResourcePackException | \InvalidArgumentException $e){
+            $this->getLogger()->error("Unable to register the resource pack: " . $e->getMessage());
+            $this->getServer()->getPluginManager()->disablePlugin($this);
+            return;
+        }
+        $this->getServer()->getResourcePackManager()->setResourcePacksRequired(true);
 
         //Save default resources
         $this->saveResource("lang/eng/lang.ini", false);
@@ -140,6 +164,10 @@ final class InventoryMonitor extends PluginBase implements Listener{
     }
 
     protected function onDisable() : void{
+        if($this->resourcePack !== null){
+            ResourcePackRegister::unregisterPack($this->resourcePack->getPackId());
+            $this->resourcePack = null;
+        }
         foreach(MonitorInstance::all() as $monitor){
             $monitor->closeAll();
         }
