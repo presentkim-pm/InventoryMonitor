@@ -926,12 +926,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/presentkim-pm/libcontainer.git",
-                "reference": "3a650d93a5fb5879cb7bb9550114231dee5c50c9"
+                "reference": "c0960466d66c8b7d20d1a322f099ac135185c1aa"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/presentkim-pm/libcontainer/zipball/3a650d93a5fb5879cb7bb9550114231dee5c50c9",
-                "reference": "3a650d93a5fb5879cb7bb9550114231dee5c50c9",
+                "url": "https://api.github.com/repos/presentkim-pm/libcontainer/zipball/c0960466d66c8b7d20d1a322f099ac135185c1aa",
+                "reference": "c0960466d66c8b7d20d1a322f099ac135185c1aa",
                 "shasum": ""
             },
             "require": {
@@ -961,7 +961,8 @@
                 "issues": "https://github.com/presentkim-pm/libcontainer/issues",
                 "source": "https://github.com/presentkim-pm/libcontainer/tree/feat/0.2.0"
             },
-            "time": "2026-11-27T12:49:35+00:00"
+            "time": "2026-11-27T13:23:53+00:00",
+            "published-time": "2026-11-27T13:23:58+00:00"
         },
         {
             "name": "presentkim/resourcepack-register",
@@ -2968,5 +2969,5 @@
         "php": "^8.4"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.11.0"
 }
