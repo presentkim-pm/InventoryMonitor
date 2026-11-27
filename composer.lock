@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ce1cbaab59054844cc921318067533c8",
+    "content-hash": "d896a472bbc22f84fb70162249c32254",
     "packages": [
         {
             "name": "adhocore/json-comment",
@@ -922,16 +922,16 @@
         },
         {
             "name": "presentkim/libcontainer",
-            "version": "0.1.0",
+            "version": "dev-feat/0.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/presentkim-pm/libcontainer.git",
-                "reference": "a14bc5e0287d8020c304e9955ebb07741165727d"
+                "reference": "3a650d93a5fb5879cb7bb9550114231dee5c50c9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/presentkim-pm/libcontainer/zipball/a14bc5e0287d8020c304e9955ebb07741165727d",
-                "reference": "a14bc5e0287d8020c304e9955ebb07741165727d",
+                "url": "https://api.github.com/repos/presentkim-pm/libcontainer/zipball/3a650d93a5fb5879cb7bb9550114231dee5c50c9",
+                "reference": "3a650d93a5fb5879cb7bb9550114231dee5c50c9",
                 "shasum": ""
             },
             "require": {
@@ -940,7 +940,11 @@
             },
             "require-dev": {
                 "axolotl-pm/pocketmine-mp": "^5.51",
-                "phpunit/phpunit": "^12.0"
+                "phpunit/phpunit": "^12.0",
+                "sof3/await-generator": "^3"
+            },
+            "suggest": {
+                "sof3/await-generator": "Needed for the kim\\present\\libcontainer\\await\\AwaitMenu helpers"
             },
             "type": "library",
             "autoload": {
@@ -955,9 +959,52 @@
             "description": "Virtual inventory menus (entity containers) for axolotl-pm/PocketMine-MP",
             "support": {
                 "issues": "https://github.com/presentkim-pm/libcontainer/issues",
-                "source": "https://github.com/presentkim-pm/libcontainer/tree/0.1.0"
+                "source": "https://github.com/presentkim-pm/libcontainer/tree/feat/0.2.0"
             },
-            "time": "2026-11-27T12:00:59+00:00"
+            "time": "2026-11-27T12:49:35+00:00"
+        },
+        {
+            "name": "presentkim/resourcepack-register",
+            "version": "2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/presentkim-pm/resourcepack-register.git",
+                "reference": "915163954207946eac9b4855b7d2a2d778f38e40"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/presentkim-pm/resourcepack-register/zipball/915163954207946eac9b4855b7d2a2d778f38e40",
+                "reference": "915163954207946eac9b4855b7d2a2d778f38e40",
+                "shasum": ""
+            },
+            "require": {
+                "adhocore/json-comment": "^1.2",
+                "ext-zip": "*",
+                "netresearch/jsonmapper": "^4.0 || ^5.0 || ^6.0",
+                "php": "^8.4",
+                "pocketmine/pocketmine-mp": "^5.0",
+                "ramsey/uuid": "^4.7"
+            },
+            "require-dev": {
+                "axolotl-pm/pocketmine-mp": "^5.51",
+                "phpunit/phpunit": "^12.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "kim\\present\\register\\resourcepack\\": "src/kim/present/register/resourcepack/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Provides utils for registering resource packs for axolotl-pm/PocketMine-MP",
+            "support": {
+                "issues": "https://github.com/presentkim-pm/resourcepack-register/issues",
+                "source": "https://github.com/presentkim-pm/resourcepack-register/tree/2.0.0"
+            },
+            "time": "2026-11-27T03:45:28+00:00"
         },
         {
             "name": "ramsey/collection",
@@ -2903,9 +2950,18 @@
             "time": "2025-12-08T11:19:18+00:00"
         }
     ],
-    "aliases": [],
+    "aliases": [
+        {
+            "package": "presentkim/libcontainer",
+            "version": "dev-feat/0.2.0",
+            "alias": "0.2.0",
+            "alias_normalized": "0.2.0.0"
+        }
+    ],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "presentkim/libcontainer": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

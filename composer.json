@@ -5,7 +5,8 @@
   "license": "LGPL-3.0-or-later",
   "require": {
     "php": "^8.4",
-    "presentkim/libcontainer": "^0.1"
+    "presentkim/libcontainer": "dev-feat/0.2.0 as 0.2.0",
+    "presentkim/resourcepack-register": "^2.0"
   },
   "require-dev": {
     "axolotl-pm/pocketmine-mp": "^5.51",
