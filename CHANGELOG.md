@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.0.1 (2026-11-27)
+
+### 🐛 Fixed
+- A window opened from a command typed in the chat (or while the pause screen is open) is no longer lost: the client rejects it while the chat screen is still closing, and libcontainer 0.2.1 now opens it again about half a second later. `/inventorymonitor <name>` typed in the chat did nothing before. Requires libcontainer ^0.2.1. The resource pack version is raised to 6.0.1 with the plugin.
+
 ## 6.0.0 (2026-11-27)
 
 ### ⚠️ Breaking changes
