@@ -42,26 +42,42 @@ final class ResourcePackTest extends TestCase{
         self::assertSame(self::pluginVersion(), $manifest['modules'][0]['version']);
     }
 
-    public function testEverySlotHasACell() : void{
-        $ui = file_get_contents($this->pack . 'ui/inventorymonitor.json');
-        self::assertIsString($ui);
-        preg_match_all('/"collection_index":\s*(\d+)/', $ui, $matches);
-        $indexes = array_map('intval', $matches[1]);
-        sort($indexes);
+    /** @return list<int> the slot numbers of the cells of a layout */
+    private function cellSlots(string $layout) : array{
+        $slots = [];
+        foreach($this->json('ui/inventorymonitor.json')[$layout]['controls'] as $control){
+            $definition = reset($control);
+            if(is_array($definition) && isset($definition['$index'])){
+                $slots[] = $definition['$index'];
+            }
+        }
+        sort($slots);
+        return $slots;
+    }
 
-        //every mirrored slot has a cell, the data slot has the label, the reserved slots have nothing
+    public function testEverySlotHasACell() : void{
         $expected = [];
         for($slot = 0; $slot < MonitorSlots::SIZE; ++$slot){
-            if(MonitorSlots::sourceOf($slot) !== null || $slot === MonitorSlots::DATA){
+            if(MonitorSlots::sourceOf($slot) !== null){
                 $expected[] = $slot;
             }
         }
-        self::assertSame($expected, $indexes);
+        self::assertSame($expected, $this->cellSlots('wide_content'));
+        self::assertSame($expected, $this->cellSlots('tall_content'));
+    }
+
+    public function testDataSlotHasTheLabel() : void{
+        $ui = file_get_contents($this->pack . 'ui/inventorymonitor.json');
+        self::assertIsString($ui);
+        preg_match_all('/"collection_index":\s*(\d+)/', $ui, $matches);
+        self::assertSame([MonitorSlots::DATA], array_map('intval', $matches[1]));
     }
 
     public function testScreenKeyMatchesThePlugin() : void{
-        $ui = $this->json('ui/inventorymonitor.json');
-        self::assertStringContainsString(MonitorSlots::SCREEN_KEY, $ui['overlay']['controls'][0]['host']['ignored']);
+        $controls = $this->json('ui/inventorymonitor.json')['overlay']['controls'];
+        foreach(['wide_host', 'tall_host'] as $i => $host){
+            self::assertStringContainsString(MonitorSlots::SCREEN_KEY, $controls[$i][$host]['ignored']);
+        }
     }
 
     public function testUiFilesParse() : void{
