@@ -2,13 +2,19 @@
 # Some of these settings are safe, others can break your server if modified incorrectly
 # New settings/defaults won't appear automatically on this file when upgrading
 
-inventorymonitor:
+settings:
+  #Multi-language setting
+  #Available: eng, kor
+  language: "eng"
+
+
+command:
   #Name of main command
   #You can change this to be what you want
   name: "inventorymonitor"
 
-  #Permission of main command
-  #You can change this to be what you want
+  #Default permission of main command (inventorymonitor.cmd)
+  #Available: "true", "false", "op", "notop"
   permission: "op"
 
   #Aliases of main command

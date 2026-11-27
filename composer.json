@@ -1,0 +1,61 @@
+{
+  "name": "presentkim/inventorymonitor",
+  "description": "Real-time responsive player inventory viewer for axolotl-pm/PocketMine-MP",
+  "type": "project",
+  "license": "LGPL-3.0-or-later",
+  "repositories": [
+    {
+      "type": "package",
+      "package": {
+        "name": "muqsit/invmenu",
+        "version": "4.7.4",
+        "type": "library",
+        "license": "GPL-3.0-only",
+        "description": "A PocketMine-MP virion to create and manage virtual inventories! (re-declared with a PSR-4 mapping so that the plugin builder can shade it)",
+        "dist": {
+          "url": "https://api.github.com/repos/Muqsit/InvMenu/zipball/ba123f12454a0c53851764b0edc15f4ceb2e452c",
+          "type": "zip",
+          "reference": "ba123f12454a0c53851764b0edc15f4ceb2e452c"
+        },
+        "source": {
+          "url": "https://github.com/Muqsit/InvMenu.git",
+          "type": "git",
+          "reference": "ba123f12454a0c53851764b0edc15f4ceb2e452c"
+        },
+        "require": {
+          "pocketmine/pocketmine-mp": "^5.0.0"
+        },
+        "autoload": {
+          "psr-4": {
+            "muqsit\\invmenu\\": "src/muqsit/invmenu/"
+          }
+        }
+      }
+    }
+  ],
+  "require": {
+    "php": "^8.4",
+    "muqsit/invmenu": "^4.7"
+  },
+  "require-dev": {
+    "axolotl-pm/pocketmine-mp": "^5.51",
+    "phpunit/phpunit": "^12.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "blugin\\inventorymonitor\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "blugin\\inventorymonitor\\tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "phpunit",
+    "build": "@php -d phar.readonly=0 build/build-plugin.php"
+  },
+  "config": {
+    "sort-packages": true
+  }
+}
