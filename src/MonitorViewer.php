@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace blugin\inventorymonitor;
 
-use muqsit\invmenu\InvMenu;
+use kim\present\libcontainer\Menu;
 use pocketmine\inventory\InventoryListener;
 use pocketmine\player\Player;
 
@@ -39,7 +39,7 @@ final class MonitorViewer{
 
     public function __construct(
         public readonly Player $player,
-        public readonly InvMenu $menu,
+        public readonly Menu $menu,
         MonitorPage $page,
         private readonly bool $hasCursor
     ){

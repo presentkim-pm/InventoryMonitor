@@ -10,54 +10,74 @@ use blugin\inventorymonitor\SlotKind;
 use PHPUnit\Framework\TestCase;
 
 final class MonitorLayoutTest extends TestCase{
-    public function testMainPage() : void{
-        $layout = MonitorLayout::build(MonitorPage::Main);
-        self::assertCount(54, $layout);
+    public function testEveryPageFitsTheVanillaChest() : void{
+        foreach(MonitorPage::cases() as $page){
+            $layout = MonitorLayout::build($page);
+            self::assertCount(27, $layout);
+            self::assertSame(range(0, 26), array_keys($layout));
+        }
+    }
 
-        for($i = 0; $i < 36; ++$i){
-            self::assertSame(SlotKind::Sync, $layout[$i]->kind);
-            self::assertSame(MonitorLayout::SOURCE_MAIN, $layout[$i]->source);
-            self::assertSame($i, $layout[$i]->sourceSlot);
+    public function testInventoryPages() : void{
+        $one = MonitorLayout::build(MonitorPage::Inventory1);
+        $two = MonitorLayout::build(MonitorPage::Inventory2);
+        for($i = 0; $i < 18; ++$i){
+            self::assertSame(SlotKind::Sync, $one[$i]->kind);
+            self::assertSame(MonitorLayout::SOURCE_MAIN, $one[$i]->source);
+            self::assertSame($i, $one[$i]->sourceSlot);
+            self::assertSame(18 + $i, $two[$i]->sourceSlot);
         }
-        foreach(range(36, 45) as $i){
-            self::assertSame(SlotKind::Border, $layout[$i]->kind);
-        }
+    }
+
+    public function testArmorPage() : void{
+        $layout = MonitorLayout::build(MonitorPage::Armor);
         foreach([0, 1, 2, 3] as $armor){
-            self::assertSame(SlotKind::Sync, $layout[46 + $armor]->kind);
-            self::assertSame(MonitorLayout::SOURCE_ARMOR, $layout[46 + $armor]->source);
-            self::assertSame($armor, $layout[46 + $armor]->sourceSlot);
+            self::assertSame(SlotKind::Sync, $layout[10 + $armor]->kind);
+            self::assertSame(MonitorLayout::SOURCE_ARMOR, $layout[10 + $armor]->source);
+            self::assertSame($armor, $layout[10 + $armor]->sourceSlot);
         }
-        self::assertSame(SlotKind::Border, $layout[50]->kind);
-        self::assertSame(SlotKind::OneWay, $layout[51]->kind);
-        self::assertSame(MonitorLayout::SOURCE_CURSOR, $layout[51]->source);
-        self::assertSame(SlotKind::Border, $layout[52]->kind);
-        self::assertSame(SlotKind::Toggle, $layout[53]->kind);
-        self::assertSame(MonitorPage::Ender, $layout[53]->target);
+        self::assertSame(SlotKind::OneWay, $layout[16]->kind);
+        self::assertSame(MonitorLayout::SOURCE_CURSOR, $layout[16]->source);
+        self::assertSame(SlotKind::Border, $layout[0]->kind);
     }
 
     public function testWithoutCursor() : void{
-        self::assertSame(SlotKind::Border, MonitorLayout::build(MonitorPage::Main, false)[51]->kind);
+        self::assertSame(SlotKind::Border, MonitorLayout::build(MonitorPage::Armor, false)[16]->kind);
     }
 
-    public function testEnderPage() : void{
-        $layout = MonitorLayout::build(MonitorPage::Ender);
-        self::assertCount(54, $layout);
-        for($i = 0; $i < 27; ++$i){
-            self::assertSame(SlotKind::Sync, $layout[$i]->kind);
-            self::assertSame(MonitorLayout::SOURCE_ENDER, $layout[$i]->source);
-            self::assertSame($i, $layout[$i]->sourceSlot);
+    public function testEnderPages() : void{
+        $one = MonitorLayout::build(MonitorPage::Ender1);
+        $two = MonitorLayout::build(MonitorPage::Ender2);
+        for($i = 0; $i < 18; ++$i){
+            self::assertSame(MonitorLayout::SOURCE_ENDER, $one[$i]->source);
+            self::assertSame($i, $one[$i]->sourceSlot);
         }
-        for($i = 27; $i < 53; ++$i){
-            self::assertSame(SlotKind::Border, $layout[$i]->kind);
+        for($i = 0; $i < 9; ++$i){
+            self::assertSame(18 + $i, $two[$i]->sourceSlot);
         }
-        self::assertSame(SlotKind::Toggle, $layout[53]->kind);
-        self::assertSame(MonitorPage::Main, $layout[53]->target);
+        for($i = 9; $i < 18; ++$i){
+            self::assertSame(SlotKind::Border, $two[$i]->kind);
+        }
+    }
+
+    public function testPageButtonsWrapAround() : void{
+        foreach(MonitorPage::cases() as $page){
+            $layout = MonitorLayout::build($page);
+            self::assertSame(SlotKind::Previous, $layout[18]->kind);
+            self::assertSame($page->previous(), $layout[18]->target);
+            self::assertSame(SlotKind::Indicator, $layout[22]->kind);
+            self::assertSame(SlotKind::Next, $layout[26]->kind);
+            self::assertSame($page->next(), $layout[26]->target);
+            self::assertSame($page, $page->next()->previous());
+        }
+        self::assertSame(MonitorPage::Inventory1, MonitorPage::Ender2->next());
+        self::assertSame(MonitorPage::Ender2, MonitorPage::Inventory1->previous());
     }
 
     public function testEverySourceSlotIsShownOnce() : void{
-        foreach([MonitorPage::Main, MonitorPage::Ender] as $page){
-            $seen = [];
-            foreach(MonitorLayout::build($page) as $definition){
+        $seen = [];
+        foreach(MonitorPage::cases() as $page){
+            foreach(MonitorLayout::build($page, false) as $definition){
                 if($definition->source !== null){
                     $key = $definition->source . ":" . $definition->sourceSlot;
                     self::assertArrayNotHasKey($key, $seen);
@@ -65,10 +85,13 @@ final class MonitorLayoutTest extends TestCase{
                 }
             }
         }
+        //36 inventory + 4 armor + 27 ender chest
+        self::assertCount(67, $seen);
     }
 
     public function testPageLabels() : void{
-        self::assertSame("main", MonitorPage::Main->label());
-        self::assertSame("ender", MonitorPage::Ender->label());
+        self::assertSame("inventory1", MonitorPage::Inventory1->label());
+        self::assertSame("ender2", MonitorPage::Ender2->label());
+        self::assertSame(1, MonitorPage::Inventory1->number());
     }
 }

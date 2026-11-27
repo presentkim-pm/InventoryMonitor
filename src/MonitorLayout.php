@@ -28,27 +28,30 @@ declare(strict_types=1);
 namespace blugin\inventorymonitor;
 
 /**
- * The layout of the double chest menu (54 slots), pure data without any server state.
+ * The layout of the chest menu (27 slots, the biggest the vanilla chest screen shows), pure data without any server
+ * state. The top two rows (0-17) hold the content of a page, the bottom row (18-26) the page buttons: previous (18),
+ * the page indicator (22) and next (26), which wrap around.
  *
- * Main page: the 36 slots of the inventory (0-35), the 4 armor slots (46-49: helmet, chestplate, leggings, boots),
- * the cursor item (51), and the toggle to the ender chest page (53).
- * Ender page: the 27 slots of the ender chest (0-26) and the toggle to the main page (53).
+ * Pages: inventory slots 0-17, inventory slots 18-35, armor (10-13: helmet, chestplate, leggings, boots) and the
+ * cursor item (16), ender chest slots 0-17, ender chest slots 18-26.
  * Everything else is a border.
  */
 final class MonitorLayout{
-    public const SIZE = 54;
+    public const SIZE = 27;
 
     public const SOURCE_MAIN = "main";
     public const SOURCE_ARMOR = "armor";
     public const SOURCE_ENDER = "ender";
     public const SOURCE_CURSOR = "cursor";
 
-    public const INVENTORY_SLOTS = 36;
-    public const ARMOR_SLOT_OFFSET = 46;
+    /** Slots of a source shown by one content page */
+    public const PAGE_SLOTS = 18;
+    public const ARMOR_SLOT_OFFSET = 10;
     public const ARMOR_SLOTS = 4;
-    public const CURSOR_SLOT = 51;
-    public const ENDER_SLOTS = 27;
-    public const TOGGLE_SLOT = 53;
+    public const CURSOR_SLOT = 16;
+    public const PREVIOUS_SLOT = 18;
+    public const INDICATOR_SLOT = 22;
+    public const NEXT_SLOT = 26;
 
     private function __construct(){
     }
@@ -61,25 +64,38 @@ final class MonitorLayout{
         }
 
         switch($page){
-            case MonitorPage::Main:
-                for($i = 0; $i < self::INVENTORY_SLOTS; ++$i){
-                    $layout[$i] = new SlotDefinition(SlotKind::Sync, self::SOURCE_MAIN, $i);
-                }
+            case MonitorPage::Inventory1:
+                self::fill($layout, self::SOURCE_MAIN, 0, self::PAGE_SLOTS);
+                break;
+            case MonitorPage::Inventory2:
+                self::fill($layout, self::SOURCE_MAIN, self::PAGE_SLOTS, self::PAGE_SLOTS);
+                break;
+            case MonitorPage::Armor:
                 for($i = 0; $i < self::ARMOR_SLOTS; ++$i){
                     $layout[self::ARMOR_SLOT_OFFSET + $i] = new SlotDefinition(SlotKind::Sync, self::SOURCE_ARMOR, $i);
                 }
                 if($hasCursor){
                     $layout[self::CURSOR_SLOT] = new SlotDefinition(SlotKind::OneWay, self::SOURCE_CURSOR, 0);
                 }
-                $layout[self::TOGGLE_SLOT] = new SlotDefinition(SlotKind::Toggle, target: MonitorPage::Ender);
                 break;
-            case MonitorPage::Ender:
-                for($i = 0; $i < self::ENDER_SLOTS; ++$i){
-                    $layout[$i] = new SlotDefinition(SlotKind::Sync, self::SOURCE_ENDER, $i);
-                }
-                $layout[self::TOGGLE_SLOT] = new SlotDefinition(SlotKind::Toggle, target: MonitorPage::Main);
+            case MonitorPage::Ender1:
+                self::fill($layout, self::SOURCE_ENDER, 0, self::PAGE_SLOTS);
+                break;
+            case MonitorPage::Ender2:
+                self::fill($layout, self::SOURCE_ENDER, self::PAGE_SLOTS, 9);
                 break;
         }
+
+        $layout[self::PREVIOUS_SLOT] = new SlotDefinition(SlotKind::Previous, target: $page->previous());
+        $layout[self::INDICATOR_SLOT] = new SlotDefinition(SlotKind::Indicator);
+        $layout[self::NEXT_SLOT] = new SlotDefinition(SlotKind::Next, target: $page->next());
         return $layout;
+    }
+
+    /** @param array<int, SlotDefinition> $layout */
+    private static function fill(array &$layout, string $source, int $from, int $count) : void{
+        for($i = 0; $i < $count; ++$i){
+            $layout[$i] = new SlotDefinition(SlotKind::Sync, $source, $from + $i);
+        }
     }
 }

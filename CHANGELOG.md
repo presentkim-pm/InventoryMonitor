@@ -1,5 +1,21 @@
 # Changelog
 
+## 5.0.0 (2026-11-27)
+
+### ⚠️ Breaking changes
+- The menu is a 27-slot chest with five pages instead of a 54-slot double chest with two pages. The vanilla chest
+  screen shows at most 27 cells, and [libcontainer](https://github.com/presentkim-pm/libcontainer) (which replaces
+  InvMenu) does not open double chests without a resource-pack screen. The bottom row holds the page buttons
+  (previous, page indicator, next; they wrap around). Pages: inventory slots 1-18, inventory slots 19-36, armor
+  (helmet, chestplate, leggings, boots) with the cursor item, ender chest slots 1-18 and 19-27.
+- Language keys: `chest.name.ender` and `chest.slot.toggle.*` are removed; `chest.slot.previous`, `chest.slot.next`,
+  `chest.slot.page` and `chest.page.*` are added (missing keys fall back to the bundled English text).
+
+### 🔄 Changes
+- The window is created with libcontainer instead of InvMenu (the InvMenu requirement and its inline composer package
+  are removed). Armor slots still accept only the matching armor piece, and the monitor still mirrors the player in
+  both directions in real time.
+
 ## 4.0.0 (2026-11-27)
 
 The version for PocketMine-MP API 3 is kept on the

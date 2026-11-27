@@ -67,7 +67,7 @@ final class InventoryMonitorCommand extends Command implements PluginOwned{
             $sender->sendMessage($lang->translate("commands.generic.player.notFound", [$args[0]]));
             return;
         }
-        $monitor->send($sender, $lang->translate("chest.name." . MonitorPage::Main->label(), [$monitor->getPlayerName()]));
+        $monitor->send($sender, $lang->translate("chest.name.main", [$monitor->getPlayerName()]));
     }
 
     public function getOwningPlugin() : Plugin{

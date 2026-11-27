@@ -28,7 +28,7 @@ declare(strict_types=1);
 namespace blugin\inventorymonitor;
 
 use blugin\inventorymonitor\lang\PluginLang;
-use muqsit\invmenu\InvMenuHandler;
+use kim\present\libcontainer\LibContainer;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerPreLoginEvent;
 use pocketmine\event\player\PlayerQuitEvent;
@@ -63,9 +63,7 @@ final class InventoryMonitor extends PluginBase implements Listener{
     }
 
     protected function onEnable() : void{
-        if(!InvMenuHandler::isRegistered()){
-            InvMenuHandler::register($this);
-        }
+        LibContainer::register($this);
 
         //Save default resources
         $this->saveResource("lang/eng/lang.ini", false);

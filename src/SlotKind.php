@@ -34,6 +34,10 @@ enum SlotKind{
     case Sync;
     /** Shows a slot of the monitored inventory, cannot be modified from the menu */
     case OneWay;
-    /** Switches the page */
-    case Toggle;
+    /** Switches to the previous page */
+    case Previous;
+    /** Switches to the next page */
+    case Next;
+    /** Shows the number of the current page, cannot be touched */
+    case Indicator;
 }

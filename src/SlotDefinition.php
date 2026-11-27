@@ -33,7 +33,7 @@ final readonly class SlotDefinition{
         /** One of the {@see MonitorLayout}::SOURCE_* keys, for the synchronized slots */
         public ?string $source = null,
         public int $sourceSlot = 0,
-        /** The page the toggle slot switches to */
+        /** The page the previous / next slot switches to */
         public ?MonitorPage $target = null
     ){}
 }

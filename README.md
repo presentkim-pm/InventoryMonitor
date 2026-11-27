@@ -27,13 +27,14 @@
 ### Overview
 
 - **What it does**
-  - `/inventorymonitor <player>` opens a double chest that mirrors the inventory of the player, online or offline,
+  - `/inventorymonitor <player>` opens a chest menu that mirrors the inventory of the player, online or offline,
     and stays in sync with it in real time.
   - You can modify the inventory from the menu too: the changes are applied to the player (offline players' data is
     saved when the last viewer closes the menu).
 - **Features**
-  - Main page: inventory (36 slots), armor (helmet, chestplate, leggings, boots), the item on the cursor (view only).
-  - Ender chest page, switched with the button in the bottom right corner.
+  - Five pages of a 27-slot chest (the largest the vanilla screen shows), switched with the previous / next buttons in
+    the bottom row (they wrap around; the paper / chest in the middle shows the page): inventory slots 1-18, inventory
+    slots 19-36, armor and the item on the cursor (view only), ender chest slots 1-18 and 19-27.
   - Armor slots only accept the matching armor piece.
   - The command name, aliases and default permission are configurable.
   - Multi-language messages (`eng`, `kor`), editable in `plugins/InventoryMonitor/lang/<lang>/lang.ini`.
@@ -47,7 +48,7 @@
 - **Server**
   - [axolotl-pm/PocketMine-MP](https://github.com/axolotl-pm/PocketMine-MP) `5.51` or higher (`plugin.yml` `api: [5.51.0]`).
   - PHP `8.4` or higher.
-  - The [InvMenu](https://github.com/Muqsit/InvMenu) library is bundled into the plugin, nothing else is needed.
+  - The [libcontainer](https://github.com/presentkim-pm/libcontainer) library is bundled into the plugin, nothing else is needed.
 - **Installation**
   - Download `InventoryMonitor.phar` from [GitHub Releases][releases-url] and place it into your server's `plugins` directory.
   - Restart the server; the plugin will load automatically according to `plugin.yml`.
