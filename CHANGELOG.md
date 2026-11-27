@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### ⚠️ Breaking changes
+- The whole inventory is shown on **one screen drawn by a resource pack** (JSON UI), instead of a 27-slot chest with
+  five pages. The pack is bundled in the plugin, registered with
+  [resourcepack-register](https://github.com/presentkim-pm/resourcepack-register) and required from players (the plugin
+  sets the server's `force_resources`). Without the pack the client would only draw the first 27 of the 72 slots.
+- The screen has 72 slots: hotbar, main inventory, armor, offhand, cursor (view only), a label with the name and the
+  online / offline status of the player, and the ender chest. See the slot contract in the README.
+- Requires [libcontainer](https://github.com/presentkim-pm/libcontainer) `0.2.0` (ranged `bind()`, resource-pack screens).
+- Language keys: `chest.name.main` is renamed `monitor.title`; `chest.slot.*` and `chest.page.*` are removed;
+  `monitor.label` and `monitor.status.online` / `monitor.status.offline` are added (missing keys fall back to the
+  bundled English text, so copy the new keys into an edited `lang.ini`).
+
+### 🔄 Changes
+- The off-hand item of an offline player is shown and saved too.
+
 ## 5.0.0 (2026-11-27)
 
 ### ⚠️ Breaking changes
