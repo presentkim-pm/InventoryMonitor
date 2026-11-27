@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d896a472bbc22f84fb70162249c32254",
+    "content-hash": "db4ab81ab8c077ed4c54704421eadae6",
     "packages": [
         {
             "name": "adhocore/json-comment",
@@ -922,16 +922,16 @@
         },
         {
             "name": "presentkim/libcontainer",
-            "version": "dev-feat/0.2.0",
+            "version": "0.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/presentkim-pm/libcontainer.git",
-                "reference": "c0960466d66c8b7d20d1a322f099ac135185c1aa"
+                "reference": "5a5cab393234f234b709bac75de29861661a1971"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/presentkim-pm/libcontainer/zipball/c0960466d66c8b7d20d1a322f099ac135185c1aa",
-                "reference": "c0960466d66c8b7d20d1a322f099ac135185c1aa",
+                "url": "https://api.github.com/repos/presentkim-pm/libcontainer/zipball/5a5cab393234f234b709bac75de29861661a1971",
+                "reference": "5a5cab393234f234b709bac75de29861661a1971",
                 "shasum": ""
             },
             "require": {
@@ -959,10 +959,9 @@
             "description": "Virtual inventory menus (entity containers) for axolotl-pm/PocketMine-MP",
             "support": {
                 "issues": "https://github.com/presentkim-pm/libcontainer/issues",
-                "source": "https://github.com/presentkim-pm/libcontainer/tree/feat/0.2.0"
+                "source": "https://github.com/presentkim-pm/libcontainer/tree/0.2.0"
             },
-            "time": "2026-11-27T13:23:53+00:00",
-            "published-time": "2026-11-27T13:23:58+00:00"
+            "time": "2026-11-27T13:29:16+00:00"
         },
         {
             "name": "presentkim/resourcepack-register",
@@ -2951,23 +2950,14 @@
             "time": "2025-12-08T11:19:18+00:00"
         }
     ],
-    "aliases": [
-        {
-            "package": "presentkim/libcontainer",
-            "version": "dev-feat/0.2.0",
-            "alias": "0.2.0",
-            "alias_normalized": "0.2.0.0"
-        }
-    ],
+    "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "presentkim/libcontainer": 20
-    },
+    "stability-flags": {},
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
         "php": "^8.4"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.11.0"
+    "plugin-api-version": "2.6.0"
 }

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.0.0 (2026-11-27)
 
 ### ⚠️ Breaking changes
 - The whole inventory is shown on **one screen drawn by a resource pack** (JSON UI), instead of a 27-slot chest with
