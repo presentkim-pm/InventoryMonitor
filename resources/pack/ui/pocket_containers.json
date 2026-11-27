@@ -1,0 +1,72 @@
+// Pocket UI: puts the InventoryMonitor screen (ui/inventorymonitor.json) into the vanilla container panel and hides the
+// vanilla chest while it is shown (the marker control "entity_ui_hide_vanilla" exists only then).
+//
+// TO VERIFY IN GAME: which of these three controls must be hidden. Measured on the research wiki: without hiding the
+// background panel the window floats over the world like the classic UI.
+{
+  "namespace": "pocket_containers",
+
+  "panel": {
+    "modifications": [
+      {
+        "array_name": "controls",
+        "operation": "insert_back",
+        "value": [ { "inventorymonitor_overlay@inventorymonitor.overlay": {} } ]
+      }
+    ]
+  },
+
+  "header_area": {
+    "modifications": [
+      {
+        "array_name": "bindings",
+        "operation": "insert_back",
+        "value": [
+          {
+            "binding_type": "view",
+            "source_control_name": "entity_ui_hide_vanilla",
+            "source_property_name": "#entity_ui_vanilla_visible",
+            "target_property_name": "#visible",
+            "binding_condition": "always"
+          }
+        ]
+      }
+    ]
+  },
+
+  "background_panel": {
+    "modifications": [
+      {
+        "array_name": "bindings",
+        "operation": "insert_back",
+        "value": [
+          {
+            "binding_type": "view",
+            "source_control_name": "entity_ui_hide_vanilla",
+            "source_property_name": "#entity_ui_vanilla_visible",
+            "target_property_name": "#visible",
+            "binding_condition": "always"
+          }
+        ]
+      }
+    ]
+  },
+
+  "half_screen": {
+    "modifications": [
+      {
+        "array_name": "bindings",
+        "operation": "insert_back",
+        "value": [
+          {
+            "binding_type": "view",
+            "source_control_name": "entity_ui_hide_vanilla",
+            "source_property_name": "#entity_ui_vanilla_visible",
+            "target_property_name": "#visible",
+            "binding_condition": "always"
+          }
+        ]
+      }
+    ]
+  }
+}

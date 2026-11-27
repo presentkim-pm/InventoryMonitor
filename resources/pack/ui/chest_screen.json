@@ -1,0 +1,36 @@
+// Classic (desktop / tablet) UI: puts the InventoryMonitor screen (ui/inventorymonitor.json) into the vanilla small
+// chest screen and hides the vanilla chest cells while it is shown. Nothing is redeclared, see inventorymonitor.json.
+{
+  "namespace": "chest",
+
+  "small_chest_panel": {
+    "modifications": [
+      {
+        "array_name": "controls",
+        "operation": "insert_back",
+        "value": [ { "inventorymonitor_overlay@inventorymonitor.overlay": {} } ]
+      }
+    ]
+  },
+
+  // TO VERIFY IN GAME (ui_tree): the vanilla chest cells (label + 27 cells) are the top half of the chest panel.
+  // The path and the name below are from memory of chest_screen.json; the player's own inventory (bottom half) and the
+  // hotbar must stay visible.
+  "small_chest_panel/root_panel/chest_panel/small_chest_panel_top_half": {
+    "modifications": [
+      {
+        "array_name": "bindings",
+        "operation": "insert_back",
+        "value": [
+          {
+            "binding_type": "view",
+            "source_control_name": "entity_ui_hide_vanilla",
+            "source_property_name": "#entity_ui_vanilla_visible",
+            "target_property_name": "#visible",
+            "binding_condition": "always"
+          }
+        ]
+      }
+    ]
+  }
+}
