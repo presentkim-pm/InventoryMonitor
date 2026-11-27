@@ -9,33 +9,76 @@
 //   - the overlay's host is `ignored` unless $container_title contains the key
 //   - the host holds the marker control "entity_ui_hide_vanilla"; the two vanilla files bind to it to hide the vanilla
 //     chest (27 cells) while the marker exists. The player's own inventory below stays visible, so shift-click works
-//   - every cell is a vanilla container item (chest.chest_grid_item) of the collection "container_items" with the
-//     slot number as collection_index, so tap, shift-click and drag behave like in a chest
+//   - every cell is a vanilla container item (chest.chest_grid_item) of the collection "container_items", so tap,
+//     shift-click and drag behave like in a chest
+//
+// A container item is an input_panel, which does not take collection_index or collection_name (the content log reports
+// them as unknown properties and every cell then shows slot 0). So each cell is a stack_panel that names the collection,
+// holding a panel with the slot number as collection_index, holding the container item; the index is inherited.
 //
 // Slot contract (src/MonitorSlots.php):
 //   0..8 hotbar, 9..35 main inventory, 36..39 armor, 40 offhand, 41 cursor (read-only), 42 name label (#hover_text),
 //   43..44 reserved, 45..71 ender chest
 //
-// LAYOUT: coordinates are in GUI pixels from the top-left of the frame content.
-//   header row   y={{HEADER_Y}}   name label (slot 42), "Ender Chest" label
+// LAYOUT: coordinates are in GUI pixels from the top-left of the content.
+//   header row   y={{HEADER_Y}}   name label (slot 42)
 //   equipment    y={{EQUIP_Y}}  armor x=0..71, offhand, cursor at x={{CURSOR_X}} with a caption on its left
-//   main + ender y=32  3 rows, inventory column x=0, ender chest column x={{ENDER_X}}
-//   hotbar       y=90  the inventory column's last row
+//   main         y={{MAIN_Y}}  3 rows of the inventory column (x=0)
+//   hotbar       y={{HOTBAR_Y}}  the inventory column's last row
+//   ender chest  wide (classic UI): a second column at x={{WIDE_ENDER_X}}, from the header row down
+//                tall (pocket UI): below the hotbar, from y={{TALL_ENDER_CAPTION_Y}}
+// Classic UI: the frame's bottom edge sits {{GAP}} px above the middle of the screen, where the vanilla chest screen
+// starts the player's own inventory (its "Inventory" label), so the two never overlap.
+// Pocket UI: the content is centred in the vanilla container half of the screen (the right half below the header).
 {
   "namespace": "inventorymonitor",
 
-  // One slot of the screen. The slot number is given as collection_index where it is used.
-  "cell@chest.chest_grid_item": {
+  // One slot of the screen: $index is the slot number, $overlay an optional control drawn on the empty cell.
+  "cell": {
+    "type": "stack_panel",
     "size": [ 18, 18 ],
-    "$item_collection_name": "container_items",
-    "collection_name": "container_items"
+    "anchor_from": "top_left",
+    "anchor_to": "top_left",
+    "collection_name": "container_items",
+    "$overlay|default": "common.cell_overlay",
+    "controls": [
+      {
+        "slot": {
+          "type": "panel",
+          "size": [ 18, 18 ],
+          "collection_index": "$index",
+          "controls": [
+            { "item@chest.chest_grid_item": { "$cell_overlay_ref": "$overlay" } }
+          ]
+        }
+      }
+    ]
   },
+
+  // The vanilla empty armor / shield silhouette, shown while the cell is empty
+  "silhouette": {
+    "type": "image",
+    "layer": 2,
+    "size": [ 16, 16 ],
+    "texture": "$silhouette",
+    "bindings": [
+      { "binding_type": "collection", "binding_collection_name": "container_items", "binding_name": "#hover_text", "binding_condition": "always" },
+      { "binding_type": "view", "source_property_name": "(#hover_text = '')", "target_property_name": "#visible" }
+    ]
+  },
+  "helmet@inventorymonitor.silhouette": { "$silhouette": "textures/ui/empty_armor_slot_helmet" },
+  "chestplate@inventorymonitor.silhouette": { "$silhouette": "textures/ui/empty_armor_slot_chestplate" },
+  "leggings@inventorymonitor.silhouette": { "$silhouette": "textures/ui/empty_armor_slot_leggings" },
+  "boots@inventorymonitor.silhouette": { "$silhouette": "textures/ui/empty_armor_slot_boots" },
+  "shield@inventorymonitor.silhouette": { "$silhouette": "textures/ui/empty_armor_slot_shield" },
 
   // A caption. $text is a key of texts/<lang>.lang
   "caption": {
     "type": "label",
     "layer": 2,
     "size": [ "100%", 10 ],
+    "anchor_from": "top_left",
+    "anchor_to": "top_left",
     "shadow": false,
     "color": [ 0.25, 0.25, 0.25 ],
     "text": "$text",
@@ -43,23 +86,33 @@
   },
 
   // The name and status of the target, sent by the server as the name of the item in slot 42 (DataSlot).
-  // #hover_text holds the name (and lore); the italic and reset codes of item names are removed.
+  // #hover_text holds the name (and lore); the italic and reset codes of item names are removed, color codes stay.
+  // The server colors the name (light colors such as §b and §7), so the label has a shadow like an item name.
   "name_label": {
-    "type": "label",
-    "layer": 2,
-    "size": [ {{CURSOR_X}}, 10 ],
-    "shadow": false,
-    "color": [ 0.25, 0.25, 0.25 ],
-    "text": "#text",
+    "type": "stack_panel",
+    "size": "$name_size",
+    "anchor_from": "top_left",
+    "anchor_to": "top_left",
     "collection_name": "container_items",
-    "collection_index": 42,
-    "bindings": [
-      { "binding_type": "collection_details", "binding_collection_name": "container_items" },
-      { "binding_type": "collection", "binding_collection_name": "container_items", "binding_name": "#hover_text" },
+    "controls": [
       {
-        "binding_type": "view",
-        "source_property_name": "(#hover_text - '§o' - '§f' - '§r')",
-        "target_property_name": "#text"
+        "text": {
+          "type": "label",
+          "layer": 2,
+          "size": [ "100%", 10 ],
+          "shadow": true,
+          "color": [ 0.25, 0.25, 0.25 ],
+          "text": "#text",
+          "collection_index": 42,
+          "bindings": [
+            { "binding_type": "collection", "binding_collection_name": "container_items", "binding_name": "#hover_text", "binding_condition": "always" },
+            {
+              "binding_type": "view",
+              "source_property_name": "(#hover_text - '§o' - '§f' - '§r')",
+              "target_property_name": "#text"
+            }
+          ]
+        }
       }
     ]
   },
@@ -76,51 +129,99 @@
     "type": "image",
     "texture": "textures/ui/dialog_background_opaque",
     "nineslice_size": 4,
-    "layer": 0,
-    "size": [ {{FRAME_W}}, {{FRAME_H}} ]
+    "layer": 0
+  },
+
+  // The labels both layouts share: name (slot 42) and the cursor caption
+  "labels": {
+    "type": "panel",
+    "size": [ "100%", "100%" ],
+    "controls": [
+      { "name@inventorymonitor.name_label": { "offset": [ 0, {{HEADER_Y}} ] } },
+      { "ender_caption@inventorymonitor.caption": { "$text": "inventorymonitor.ender", "offset": "$ender_caption_offset" } },
+      {
+        "cursor_caption@inventorymonitor.caption": {
+          "$text": "inventorymonitor.cursor",
+          "size": [ 40, 10 ],
+          "text_alignment": "right",
+          "offset": [ {{CAPTION_X}}, {{CAPTION_Y}} ]
+        }
+      }
+    ]
+  },
+
+  // Classic UI: inventory and ender chest side by side, above the vanilla player inventory
+  "wide_content": {
+    "type": "panel",
+    "size": [ {{WIDE_WIDTH}}, {{WIDE_HEIGHT}} ],
+    "anchor_from": "top_left",
+    "anchor_to": "top_left",
+    "offset": [ {{PAD}}, {{PAD}} ],
+    "$name_size": [ {{WIDE_NAME_W}}, 10 ],
+    "controls": [
+      { "labels@inventorymonitor.labels": { "$ender_caption_offset": [ {{WIDE_ENDER_X}}, {{WIDE_ENDER_CAPTION_Y}} ] } },
+{{WIDE_CELLS}}
+    ]
+  },
+
+  // Pocket UI: the ender chest below the inventory, in the vanilla container half of the screen
+  "tall_content": {
+    "type": "panel",
+    "size": [ {{TALL_WIDTH}}, {{TALL_HEIGHT}} ],
+    "$name_size": [ {{TALL_NAME_W}}, 10 ],
+    "controls": [
+      { "labels@inventorymonitor.labels": { "$ender_caption_offset": [ {{TALL_ENDER_X}}, {{TALL_ENDER_CAPTION_Y}} ] } },
+{{TALL_CELLS}}
+    ]
   },
 
   // The whole screen. layer 1 on purpose: the item renderer does not draw above a layer sum of about 99.
+  // ui/pocket_containers.json sets $im_tall; each host is ignored unless the title has the key and the layout matches
+  // (`ignored` is evaluated in the scope of the overlay, so the variables are declared here).
   "overlay": {
     "type": "panel",
     "size": [ "100%", "100%" ],
     "layer": 1,
     "$im_title": "$container_title",
+    "$im_tall|default": false,
     "controls": [
       {
-        "host": {
+        "wide_host": {
           "type": "panel",
-          "size": [ {{FRAME_W}}, {{FRAME_H}} ],
-          "anchor_from": "top_middle",
-          "anchor_to": "top_middle",
-          "offset": [ 0, 2 ],
-          // ignored when the title does not contain the key (evaluated in the scope of the overlay)
-          "ignored": "(($im_title - '§b§w§i§m') = $im_title)",
+          "size": [ {{WIDE_FRAME_W}}, {{WIDE_FRAME_H}} ],
+          "anchor_from": "center",
+          "anchor_to": "bottom_middle",
+          "offset": [ 0, -{{GAP}} ],
+          "ignored": "((($im_title - '§b§w§i§m') = $im_title) or $im_tall)",
           "controls": [
             { "entity_ui_hide_vanilla@inventorymonitor.entity_ui_hide_vanilla": {} },
-            { "frame@inventorymonitor.frame": {} },
+            { "frame@inventorymonitor.frame": { "size": [ "100%", "100%" ] } },
+            { "close@common.close_button": { "layer": 3 } },
+            // Background of the player's own inventory below (the vanilla window's lower half, 176 x 83 + border);
+            // the vanilla window background is hidden by ui/chest_screen.json
             {
-              "content": {
-                "type": "panel",
-                "size": [ {{WIDTH}}, {{HEIGHT}} ],
-                "offset": [ {{PAD}}, {{PAD}} ],
-                "anchor_from": "top_left",
-                "anchor_to": "top_left",
-                "controls": [
-                  { "name@inventorymonitor.name_label": { "offset": [ 0, {{HEADER_Y}} ] } },
-                  { "ender_caption@inventorymonitor.caption": { "$text": "inventorymonitor.ender", "offset": [ {{ENDER_X}}, {{HEADER_Y}} ] } },
-                  {
-                    "cursor_caption@inventorymonitor.caption": {
-                      "$text": "inventorymonitor.cursor",
-                      "size": [ 40, 10 ],
-                      "text_alignment": "right",
-                      "offset": [ {{CAPTION_X}}, {{CAPTION_Y}} ]
-                    }
-                  },
-{{CELLS}}
-                ]
+              "inventory_frame@inventorymonitor.frame": {
+                "size": [ 176, {{INVENTORY_FRAME_H}} ],
+                "anchor_from": "bottom_middle",
+                "anchor_to": "top_middle",
+                "offset": [ 0, -1 ]
               }
-            }
+            },
+            { "content@inventorymonitor.wide_content": {} }
+          ]
+        }
+      },
+      {
+        "tall_host": {
+          "type": "panel",
+          "size": [ "50%", "100% - 27px" ],
+          "anchor_from": "top_left",
+          "anchor_to": "top_left",
+          "offset": [ "50%", 27 ],
+          "ignored": "((($im_title - '§b§w§i§m') = $im_title) or (not $im_tall))",
+          "controls": [
+            { "entity_ui_hide_vanilla@inventorymonitor.entity_ui_hide_vanilla": {} },
+            { "content@inventorymonitor.tall_content": {} }
           ]
         }
       }

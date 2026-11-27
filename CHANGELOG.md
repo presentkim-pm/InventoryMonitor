@@ -16,6 +16,8 @@
 
 ### 🔄 Changes
 - The off-hand item of an offline player is shown and saved too.
+- The pocket UI shows the screen in its container half, with the ender chest below the inventory; the classic UI keeps
+  the ender chest beside it. Empty armor and offhand cells show the vanilla silhouettes.
 
 ## 5.0.0 (2026-11-27)
 

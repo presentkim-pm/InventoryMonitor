@@ -1,8 +1,7 @@
-// Pocket UI: puts the InventoryMonitor screen (ui/inventorymonitor.json) into the vanilla container panel and hides the
-// vanilla chest while it is shown (the marker control "entity_ui_hide_vanilla" exists only then).
-//
-// TO VERIFY IN GAME: which of these three controls must be hidden. Measured on the research wiki: without hiding the
-// background panel the window floats over the world like the classic UI.
+// Pocket UI: puts the InventoryMonitor screen (ui/inventorymonitor.json, tall layout) into the vanilla container panel.
+// The panel has two halves: "inventory" (the player's own inventory, left) and "container" (the chest, right). Only the
+// container half and its header are hidden while the screen is shown (the marker control "entity_ui_hide_vanilla"
+// exists only then); the player's inventory, the close button and the background stay, so shift-click works.
 {
   "namespace": "pocket_containers",
 
@@ -11,12 +10,12 @@
       {
         "array_name": "controls",
         "operation": "insert_back",
-        "value": [ { "inventorymonitor_overlay@inventorymonitor.overlay": {} } ]
+        "value": [ { "inventorymonitor_overlay@inventorymonitor.overlay": { "$im_tall": true } } ]
       }
     ]
   },
 
-  "header_area": {
+  "panel/container": {
     "modifications": [
       {
         "array_name": "bindings",
@@ -34,25 +33,7 @@
     ]
   },
 
-  "background_panel": {
-    "modifications": [
-      {
-        "array_name": "bindings",
-        "operation": "insert_back",
-        "value": [
-          {
-            "binding_type": "view",
-            "source_control_name": "entity_ui_hide_vanilla",
-            "source_property_name": "#entity_ui_vanilla_visible",
-            "target_property_name": "#visible",
-            "binding_condition": "always"
-          }
-        ]
-      }
-    ]
-  },
-
-  "half_screen": {
+  "header_area/container_header": {
     "modifications": [
       {
         "array_name": "bindings",

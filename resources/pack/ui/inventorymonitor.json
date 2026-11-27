@@ -9,33 +9,76 @@
 //   - the overlay's host is `ignored` unless $container_title contains the key
 //   - the host holds the marker control "entity_ui_hide_vanilla"; the two vanilla files bind to it to hide the vanilla
 //     chest (27 cells) while the marker exists. The player's own inventory below stays visible, so shift-click works
-//   - every cell is a vanilla container item (chest.chest_grid_item) of the collection "container_items" with the
-//     slot number as collection_index, so tap, shift-click and drag behave like in a chest
+//   - every cell is a vanilla container item (chest.chest_grid_item) of the collection "container_items", so tap,
+//     shift-click and drag behave like in a chest
+//
+// A container item is an input_panel, which does not take collection_index or collection_name (the content log reports
+// them as unknown properties and every cell then shows slot 0). So each cell is a stack_panel that names the collection,
+// holding a panel with the slot number as collection_index, holding the container item; the index is inherited.
 //
 // Slot contract (src/MonitorSlots.php):
 //   0..8 hotbar, 9..35 main inventory, 36..39 armor, 40 offhand, 41 cursor (read-only), 42 name label (#hover_text),
 //   43..44 reserved, 45..71 ender chest
 //
-// LAYOUT: coordinates are in GUI pixels from the top-left of the frame content.
-//   header row   y=0   name label (slot 42), "Ender Chest" label
+// LAYOUT: coordinates are in GUI pixels from the top-left of the content.
+//   header row   y=0   name label (slot 42)
 //   equipment    y=12  armor x=0..71, offhand, cursor at x=144 with a caption on its left
-//   main + ender y=32  3 rows, inventory column x=0, ender chest column x=170
+//   main         y=32  3 rows of the inventory column (x=0)
 //   hotbar       y=90  the inventory column's last row
+//   ender chest  wide (classic UI): a second column at x=170, from the header row down
+//                tall (pocket UI): below the hotbar, from y=111
+// Classic UI: the frame's bottom edge sits 8 px above the middle of the screen, where the vanilla chest screen
+// starts the player's own inventory (its "Inventory" label), so the two never overlap.
+// Pocket UI: the content is centred in the vanilla container half of the screen (the right half below the header).
 {
   "namespace": "inventorymonitor",
 
-  // One slot of the screen. The slot number is given as collection_index where it is used.
-  "cell@chest.chest_grid_item": {
+  // One slot of the screen: $index is the slot number, $overlay an optional control drawn on the empty cell.
+  "cell": {
+    "type": "stack_panel",
     "size": [ 18, 18 ],
-    "$item_collection_name": "container_items",
-    "collection_name": "container_items"
+    "anchor_from": "top_left",
+    "anchor_to": "top_left",
+    "collection_name": "container_items",
+    "$overlay|default": "common.cell_overlay",
+    "controls": [
+      {
+        "slot": {
+          "type": "panel",
+          "size": [ 18, 18 ],
+          "collection_index": "$index",
+          "controls": [
+            { "item@chest.chest_grid_item": { "$cell_overlay_ref": "$overlay" } }
+          ]
+        }
+      }
+    ]
   },
+
+  // The vanilla empty armor / shield silhouette, shown while the cell is empty
+  "silhouette": {
+    "type": "image",
+    "layer": 2,
+    "size": [ 16, 16 ],
+    "texture": "$silhouette",
+    "bindings": [
+      { "binding_type": "collection", "binding_collection_name": "container_items", "binding_name": "#hover_text", "binding_condition": "always" },
+      { "binding_type": "view", "source_property_name": "(#hover_text = '')", "target_property_name": "#visible" }
+    ]
+  },
+  "helmet@inventorymonitor.silhouette": { "$silhouette": "textures/ui/empty_armor_slot_helmet" },
+  "chestplate@inventorymonitor.silhouette": { "$silhouette": "textures/ui/empty_armor_slot_chestplate" },
+  "leggings@inventorymonitor.silhouette": { "$silhouette": "textures/ui/empty_armor_slot_leggings" },
+  "boots@inventorymonitor.silhouette": { "$silhouette": "textures/ui/empty_armor_slot_boots" },
+  "shield@inventorymonitor.silhouette": { "$silhouette": "textures/ui/empty_armor_slot_shield" },
 
   // A caption. $text is a key of texts/<lang>.lang
   "caption": {
     "type": "label",
     "layer": 2,
     "size": [ "100%", 10 ],
+    "anchor_from": "top_left",
+    "anchor_to": "top_left",
     "shadow": false,
     "color": [ 0.25, 0.25, 0.25 ],
     "text": "$text",
@@ -43,23 +86,33 @@
   },
 
   // The name and status of the target, sent by the server as the name of the item in slot 42 (DataSlot).
-  // #hover_text holds the name (and lore); the italic and reset codes of item names are removed.
+  // #hover_text holds the name (and lore); the italic and reset codes of item names are removed, color codes stay.
+  // The server colors the name (light colors such as §b and §7), so the label has a shadow like an item name.
   "name_label": {
-    "type": "label",
-    "layer": 2,
-    "size": [ 144, 10 ],
-    "shadow": false,
-    "color": [ 0.25, 0.25, 0.25 ],
-    "text": "#text",
+    "type": "stack_panel",
+    "size": "$name_size",
+    "anchor_from": "top_left",
+    "anchor_to": "top_left",
     "collection_name": "container_items",
-    "collection_index": 42,
-    "bindings": [
-      { "binding_type": "collection_details", "binding_collection_name": "container_items" },
-      { "binding_type": "collection", "binding_collection_name": "container_items", "binding_name": "#hover_text" },
+    "controls": [
       {
-        "binding_type": "view",
-        "source_property_name": "(#hover_text - '§o' - '§f' - '§r')",
-        "target_property_name": "#text"
+        "text": {
+          "type": "label",
+          "layer": 2,
+          "size": [ "100%", 10 ],
+          "shadow": true,
+          "color": [ 0.25, 0.25, 0.25 ],
+          "text": "#text",
+          "collection_index": 42,
+          "bindings": [
+            { "binding_type": "collection", "binding_collection_name": "container_items", "binding_name": "#hover_text", "binding_condition": "always" },
+            {
+              "binding_type": "view",
+              "source_property_name": "(#hover_text - '§o' - '§f' - '§r')",
+              "target_property_name": "#text"
+            }
+          ]
+        }
       }
     ]
   },
@@ -76,119 +129,235 @@
     "type": "image",
     "texture": "textures/ui/dialog_background_opaque",
     "nineslice_size": 4,
-    "layer": 0,
-    "size": [ 344, 120 ]
+    "layer": 0
+  },
+
+  // The labels both layouts share: name (slot 42) and the cursor caption
+  "labels": {
+    "type": "panel",
+    "size": [ "100%", "100%" ],
+    "controls": [
+      { "name@inventorymonitor.name_label": { "offset": [ 0, 0 ] } },
+      { "ender_caption@inventorymonitor.caption": { "$text": "inventorymonitor.ender", "offset": "$ender_caption_offset" } },
+      {
+        "cursor_caption@inventorymonitor.caption": {
+          "$text": "inventorymonitor.cursor",
+          "size": [ 40, 10 ],
+          "text_alignment": "right",
+          "offset": [ 100, 16 ]
+        }
+      }
+    ]
+  },
+
+  // Classic UI: inventory and ender chest side by side, above the vanilla player inventory
+  "wide_content": {
+    "type": "panel",
+    "size": [ 332, 108 ],
+    "anchor_from": "top_left",
+    "anchor_to": "top_left",
+    "offset": [ 4, 4 ],
+    "$name_size": [ 166, 10 ],
+    "controls": [
+      { "labels@inventorymonitor.labels": { "$ender_caption_offset": [ 170, 0 ] } },
+      { "cell_0@inventorymonitor.cell": { "$index": 0, "offset": [ 0, 90 ] } },
+      { "cell_1@inventorymonitor.cell": { "$index": 1, "offset": [ 18, 90 ] } },
+      { "cell_2@inventorymonitor.cell": { "$index": 2, "offset": [ 36, 90 ] } },
+      { "cell_3@inventorymonitor.cell": { "$index": 3, "offset": [ 54, 90 ] } },
+      { "cell_4@inventorymonitor.cell": { "$index": 4, "offset": [ 72, 90 ] } },
+      { "cell_5@inventorymonitor.cell": { "$index": 5, "offset": [ 90, 90 ] } },
+      { "cell_6@inventorymonitor.cell": { "$index": 6, "offset": [ 108, 90 ] } },
+      { "cell_7@inventorymonitor.cell": { "$index": 7, "offset": [ 126, 90 ] } },
+      { "cell_8@inventorymonitor.cell": { "$index": 8, "offset": [ 144, 90 ] } },
+      { "cell_9@inventorymonitor.cell": { "$index": 9, "offset": [ 0, 32 ] } },
+      { "cell_10@inventorymonitor.cell": { "$index": 10, "offset": [ 18, 32 ] } },
+      { "cell_11@inventorymonitor.cell": { "$index": 11, "offset": [ 36, 32 ] } },
+      { "cell_12@inventorymonitor.cell": { "$index": 12, "offset": [ 54, 32 ] } },
+      { "cell_13@inventorymonitor.cell": { "$index": 13, "offset": [ 72, 32 ] } },
+      { "cell_14@inventorymonitor.cell": { "$index": 14, "offset": [ 90, 32 ] } },
+      { "cell_15@inventorymonitor.cell": { "$index": 15, "offset": [ 108, 32 ] } },
+      { "cell_16@inventorymonitor.cell": { "$index": 16, "offset": [ 126, 32 ] } },
+      { "cell_17@inventorymonitor.cell": { "$index": 17, "offset": [ 144, 32 ] } },
+      { "cell_18@inventorymonitor.cell": { "$index": 18, "offset": [ 0, 50 ] } },
+      { "cell_19@inventorymonitor.cell": { "$index": 19, "offset": [ 18, 50 ] } },
+      { "cell_20@inventorymonitor.cell": { "$index": 20, "offset": [ 36, 50 ] } },
+      { "cell_21@inventorymonitor.cell": { "$index": 21, "offset": [ 54, 50 ] } },
+      { "cell_22@inventorymonitor.cell": { "$index": 22, "offset": [ 72, 50 ] } },
+      { "cell_23@inventorymonitor.cell": { "$index": 23, "offset": [ 90, 50 ] } },
+      { "cell_24@inventorymonitor.cell": { "$index": 24, "offset": [ 108, 50 ] } },
+      { "cell_25@inventorymonitor.cell": { "$index": 25, "offset": [ 126, 50 ] } },
+      { "cell_26@inventorymonitor.cell": { "$index": 26, "offset": [ 144, 50 ] } },
+      { "cell_27@inventorymonitor.cell": { "$index": 27, "offset": [ 0, 68 ] } },
+      { "cell_28@inventorymonitor.cell": { "$index": 28, "offset": [ 18, 68 ] } },
+      { "cell_29@inventorymonitor.cell": { "$index": 29, "offset": [ 36, 68 ] } },
+      { "cell_30@inventorymonitor.cell": { "$index": 30, "offset": [ 54, 68 ] } },
+      { "cell_31@inventorymonitor.cell": { "$index": 31, "offset": [ 72, 68 ] } },
+      { "cell_32@inventorymonitor.cell": { "$index": 32, "offset": [ 90, 68 ] } },
+      { "cell_33@inventorymonitor.cell": { "$index": 33, "offset": [ 108, 68 ] } },
+      { "cell_34@inventorymonitor.cell": { "$index": 34, "offset": [ 126, 68 ] } },
+      { "cell_35@inventorymonitor.cell": { "$index": 35, "offset": [ 144, 68 ] } },
+      { "cell_36@inventorymonitor.cell": { "$index": 36, "offset": [ 0, 12 ], "$overlay": "inventorymonitor.helmet" } },
+      { "cell_37@inventorymonitor.cell": { "$index": 37, "offset": [ 18, 12 ], "$overlay": "inventorymonitor.chestplate" } },
+      { "cell_38@inventorymonitor.cell": { "$index": 38, "offset": [ 36, 12 ], "$overlay": "inventorymonitor.leggings" } },
+      { "cell_39@inventorymonitor.cell": { "$index": 39, "offset": [ 54, 12 ], "$overlay": "inventorymonitor.boots" } },
+      { "cell_40@inventorymonitor.cell": { "$index": 40, "offset": [ 82, 12 ], "$overlay": "inventorymonitor.shield" } },
+      { "cell_41@inventorymonitor.cell": { "$index": 41, "offset": [ 144, 12 ] } },
+      { "cell_45@inventorymonitor.cell": { "$index": 45, "offset": [ 170, 32 ] } },
+      { "cell_46@inventorymonitor.cell": { "$index": 46, "offset": [ 188, 32 ] } },
+      { "cell_47@inventorymonitor.cell": { "$index": 47, "offset": [ 206, 32 ] } },
+      { "cell_48@inventorymonitor.cell": { "$index": 48, "offset": [ 224, 32 ] } },
+      { "cell_49@inventorymonitor.cell": { "$index": 49, "offset": [ 242, 32 ] } },
+      { "cell_50@inventorymonitor.cell": { "$index": 50, "offset": [ 260, 32 ] } },
+      { "cell_51@inventorymonitor.cell": { "$index": 51, "offset": [ 278, 32 ] } },
+      { "cell_52@inventorymonitor.cell": { "$index": 52, "offset": [ 296, 32 ] } },
+      { "cell_53@inventorymonitor.cell": { "$index": 53, "offset": [ 314, 32 ] } },
+      { "cell_54@inventorymonitor.cell": { "$index": 54, "offset": [ 170, 50 ] } },
+      { "cell_55@inventorymonitor.cell": { "$index": 55, "offset": [ 188, 50 ] } },
+      { "cell_56@inventorymonitor.cell": { "$index": 56, "offset": [ 206, 50 ] } },
+      { "cell_57@inventorymonitor.cell": { "$index": 57, "offset": [ 224, 50 ] } },
+      { "cell_58@inventorymonitor.cell": { "$index": 58, "offset": [ 242, 50 ] } },
+      { "cell_59@inventorymonitor.cell": { "$index": 59, "offset": [ 260, 50 ] } },
+      { "cell_60@inventorymonitor.cell": { "$index": 60, "offset": [ 278, 50 ] } },
+      { "cell_61@inventorymonitor.cell": { "$index": 61, "offset": [ 296, 50 ] } },
+      { "cell_62@inventorymonitor.cell": { "$index": 62, "offset": [ 314, 50 ] } },
+      { "cell_63@inventorymonitor.cell": { "$index": 63, "offset": [ 170, 68 ] } },
+      { "cell_64@inventorymonitor.cell": { "$index": 64, "offset": [ 188, 68 ] } },
+      { "cell_65@inventorymonitor.cell": { "$index": 65, "offset": [ 206, 68 ] } },
+      { "cell_66@inventorymonitor.cell": { "$index": 66, "offset": [ 224, 68 ] } },
+      { "cell_67@inventorymonitor.cell": { "$index": 67, "offset": [ 242, 68 ] } },
+      { "cell_68@inventorymonitor.cell": { "$index": 68, "offset": [ 260, 68 ] } },
+      { "cell_69@inventorymonitor.cell": { "$index": 69, "offset": [ 278, 68 ] } },
+      { "cell_70@inventorymonitor.cell": { "$index": 70, "offset": [ 296, 68 ] } },
+      { "cell_71@inventorymonitor.cell": { "$index": 71, "offset": [ 314, 68 ] } }
+    ]
+  },
+
+  // Pocket UI: the ender chest below the inventory, in the vanilla container half of the screen
+  "tall_content": {
+    "type": "panel",
+    "size": [ 162, 176 ],
+    "$name_size": [ 162, 10 ],
+    "controls": [
+      { "labels@inventorymonitor.labels": { "$ender_caption_offset": [ 0, 111 ] } },
+      { "cell_0@inventorymonitor.cell": { "$index": 0, "offset": [ 0, 90 ] } },
+      { "cell_1@inventorymonitor.cell": { "$index": 1, "offset": [ 18, 90 ] } },
+      { "cell_2@inventorymonitor.cell": { "$index": 2, "offset": [ 36, 90 ] } },
+      { "cell_3@inventorymonitor.cell": { "$index": 3, "offset": [ 54, 90 ] } },
+      { "cell_4@inventorymonitor.cell": { "$index": 4, "offset": [ 72, 90 ] } },
+      { "cell_5@inventorymonitor.cell": { "$index": 5, "offset": [ 90, 90 ] } },
+      { "cell_6@inventorymonitor.cell": { "$index": 6, "offset": [ 108, 90 ] } },
+      { "cell_7@inventorymonitor.cell": { "$index": 7, "offset": [ 126, 90 ] } },
+      { "cell_8@inventorymonitor.cell": { "$index": 8, "offset": [ 144, 90 ] } },
+      { "cell_9@inventorymonitor.cell": { "$index": 9, "offset": [ 0, 32 ] } },
+      { "cell_10@inventorymonitor.cell": { "$index": 10, "offset": [ 18, 32 ] } },
+      { "cell_11@inventorymonitor.cell": { "$index": 11, "offset": [ 36, 32 ] } },
+      { "cell_12@inventorymonitor.cell": { "$index": 12, "offset": [ 54, 32 ] } },
+      { "cell_13@inventorymonitor.cell": { "$index": 13, "offset": [ 72, 32 ] } },
+      { "cell_14@inventorymonitor.cell": { "$index": 14, "offset": [ 90, 32 ] } },
+      { "cell_15@inventorymonitor.cell": { "$index": 15, "offset": [ 108, 32 ] } },
+      { "cell_16@inventorymonitor.cell": { "$index": 16, "offset": [ 126, 32 ] } },
+      { "cell_17@inventorymonitor.cell": { "$index": 17, "offset": [ 144, 32 ] } },
+      { "cell_18@inventorymonitor.cell": { "$index": 18, "offset": [ 0, 50 ] } },
+      { "cell_19@inventorymonitor.cell": { "$index": 19, "offset": [ 18, 50 ] } },
+      { "cell_20@inventorymonitor.cell": { "$index": 20, "offset": [ 36, 50 ] } },
+      { "cell_21@inventorymonitor.cell": { "$index": 21, "offset": [ 54, 50 ] } },
+      { "cell_22@inventorymonitor.cell": { "$index": 22, "offset": [ 72, 50 ] } },
+      { "cell_23@inventorymonitor.cell": { "$index": 23, "offset": [ 90, 50 ] } },
+      { "cell_24@inventorymonitor.cell": { "$index": 24, "offset": [ 108, 50 ] } },
+      { "cell_25@inventorymonitor.cell": { "$index": 25, "offset": [ 126, 50 ] } },
+      { "cell_26@inventorymonitor.cell": { "$index": 26, "offset": [ 144, 50 ] } },
+      { "cell_27@inventorymonitor.cell": { "$index": 27, "offset": [ 0, 68 ] } },
+      { "cell_28@inventorymonitor.cell": { "$index": 28, "offset": [ 18, 68 ] } },
+      { "cell_29@inventorymonitor.cell": { "$index": 29, "offset": [ 36, 68 ] } },
+      { "cell_30@inventorymonitor.cell": { "$index": 30, "offset": [ 54, 68 ] } },
+      { "cell_31@inventorymonitor.cell": { "$index": 31, "offset": [ 72, 68 ] } },
+      { "cell_32@inventorymonitor.cell": { "$index": 32, "offset": [ 90, 68 ] } },
+      { "cell_33@inventorymonitor.cell": { "$index": 33, "offset": [ 108, 68 ] } },
+      { "cell_34@inventorymonitor.cell": { "$index": 34, "offset": [ 126, 68 ] } },
+      { "cell_35@inventorymonitor.cell": { "$index": 35, "offset": [ 144, 68 ] } },
+      { "cell_36@inventorymonitor.cell": { "$index": 36, "offset": [ 0, 12 ], "$overlay": "inventorymonitor.helmet" } },
+      { "cell_37@inventorymonitor.cell": { "$index": 37, "offset": [ 18, 12 ], "$overlay": "inventorymonitor.chestplate" } },
+      { "cell_38@inventorymonitor.cell": { "$index": 38, "offset": [ 36, 12 ], "$overlay": "inventorymonitor.leggings" } },
+      { "cell_39@inventorymonitor.cell": { "$index": 39, "offset": [ 54, 12 ], "$overlay": "inventorymonitor.boots" } },
+      { "cell_40@inventorymonitor.cell": { "$index": 40, "offset": [ 82, 12 ], "$overlay": "inventorymonitor.shield" } },
+      { "cell_41@inventorymonitor.cell": { "$index": 41, "offset": [ 144, 12 ] } },
+      { "cell_45@inventorymonitor.cell": { "$index": 45, "offset": [ 0, 122 ] } },
+      { "cell_46@inventorymonitor.cell": { "$index": 46, "offset": [ 18, 122 ] } },
+      { "cell_47@inventorymonitor.cell": { "$index": 47, "offset": [ 36, 122 ] } },
+      { "cell_48@inventorymonitor.cell": { "$index": 48, "offset": [ 54, 122 ] } },
+      { "cell_49@inventorymonitor.cell": { "$index": 49, "offset": [ 72, 122 ] } },
+      { "cell_50@inventorymonitor.cell": { "$index": 50, "offset": [ 90, 122 ] } },
+      { "cell_51@inventorymonitor.cell": { "$index": 51, "offset": [ 108, 122 ] } },
+      { "cell_52@inventorymonitor.cell": { "$index": 52, "offset": [ 126, 122 ] } },
+      { "cell_53@inventorymonitor.cell": { "$index": 53, "offset": [ 144, 122 ] } },
+      { "cell_54@inventorymonitor.cell": { "$index": 54, "offset": [ 0, 140 ] } },
+      { "cell_55@inventorymonitor.cell": { "$index": 55, "offset": [ 18, 140 ] } },
+      { "cell_56@inventorymonitor.cell": { "$index": 56, "offset": [ 36, 140 ] } },
+      { "cell_57@inventorymonitor.cell": { "$index": 57, "offset": [ 54, 140 ] } },
+      { "cell_58@inventorymonitor.cell": { "$index": 58, "offset": [ 72, 140 ] } },
+      { "cell_59@inventorymonitor.cell": { "$index": 59, "offset": [ 90, 140 ] } },
+      { "cell_60@inventorymonitor.cell": { "$index": 60, "offset": [ 108, 140 ] } },
+      { "cell_61@inventorymonitor.cell": { "$index": 61, "offset": [ 126, 140 ] } },
+      { "cell_62@inventorymonitor.cell": { "$index": 62, "offset": [ 144, 140 ] } },
+      { "cell_63@inventorymonitor.cell": { "$index": 63, "offset": [ 0, 158 ] } },
+      { "cell_64@inventorymonitor.cell": { "$index": 64, "offset": [ 18, 158 ] } },
+      { "cell_65@inventorymonitor.cell": { "$index": 65, "offset": [ 36, 158 ] } },
+      { "cell_66@inventorymonitor.cell": { "$index": 66, "offset": [ 54, 158 ] } },
+      { "cell_67@inventorymonitor.cell": { "$index": 67, "offset": [ 72, 158 ] } },
+      { "cell_68@inventorymonitor.cell": { "$index": 68, "offset": [ 90, 158 ] } },
+      { "cell_69@inventorymonitor.cell": { "$index": 69, "offset": [ 108, 158 ] } },
+      { "cell_70@inventorymonitor.cell": { "$index": 70, "offset": [ 126, 158 ] } },
+      { "cell_71@inventorymonitor.cell": { "$index": 71, "offset": [ 144, 158 ] } }
+    ]
   },
 
   // The whole screen. layer 1 on purpose: the item renderer does not draw above a layer sum of about 99.
+  // ui/pocket_containers.json sets $im_tall; each host is ignored unless the title has the key and the layout matches
+  // (`ignored` is evaluated in the scope of the overlay, so the variables are declared here).
   "overlay": {
     "type": "panel",
     "size": [ "100%", "100%" ],
     "layer": 1,
     "$im_title": "$container_title",
+    "$im_tall|default": false,
     "controls": [
       {
-        "host": {
+        "wide_host": {
           "type": "panel",
-          "size": [ 344, 120 ],
-          "anchor_from": "top_middle",
-          "anchor_to": "top_middle",
-          "offset": [ 0, 2 ],
-          // ignored when the title does not contain the key (evaluated in the scope of the overlay)
-          "ignored": "(($im_title - '§b§w§i§m') = $im_title)",
+          "size": [ 340, 116 ],
+          "anchor_from": "center",
+          "anchor_to": "bottom_middle",
+          "offset": [ 0, -8 ],
+          "ignored": "((($im_title - '§b§w§i§m') = $im_title) or $im_tall)",
           "controls": [
             { "entity_ui_hide_vanilla@inventorymonitor.entity_ui_hide_vanilla": {} },
-            { "frame@inventorymonitor.frame": {} },
+            { "frame@inventorymonitor.frame": { "size": [ "100%", "100%" ] } },
+            { "close@common.close_button": { "layer": 3 } },
+            // Background of the player's own inventory below (the vanilla window's lower half, 176 x 83 + border);
+            // the vanilla window background is hidden by ui/chest_screen.json
             {
-              "content": {
-                "type": "panel",
-                "size": [ 332, 108 ],
-                "offset": [ 6, 6 ],
-                "anchor_from": "top_left",
-                "anchor_to": "top_left",
-                "controls": [
-                  { "name@inventorymonitor.name_label": { "offset": [ 0, 0 ] } },
-                  { "ender_caption@inventorymonitor.caption": { "$text": "inventorymonitor.ender", "offset": [ 170, 0 ] } },
-                  {
-                    "cursor_caption@inventorymonitor.caption": {
-                      "$text": "inventorymonitor.cursor",
-                      "size": [ 40, 10 ],
-                      "text_alignment": "right",
-                      "offset": [ 100, 16 ]
-                    }
-                  },
-                  { "cell_0@inventorymonitor.cell": { "collection_index": 0, "offset": [ 0, 90 ] } },
-                  { "cell_1@inventorymonitor.cell": { "collection_index": 1, "offset": [ 18, 90 ] } },
-                  { "cell_2@inventorymonitor.cell": { "collection_index": 2, "offset": [ 36, 90 ] } },
-                  { "cell_3@inventorymonitor.cell": { "collection_index": 3, "offset": [ 54, 90 ] } },
-                  { "cell_4@inventorymonitor.cell": { "collection_index": 4, "offset": [ 72, 90 ] } },
-                  { "cell_5@inventorymonitor.cell": { "collection_index": 5, "offset": [ 90, 90 ] } },
-                  { "cell_6@inventorymonitor.cell": { "collection_index": 6, "offset": [ 108, 90 ] } },
-                  { "cell_7@inventorymonitor.cell": { "collection_index": 7, "offset": [ 126, 90 ] } },
-                  { "cell_8@inventorymonitor.cell": { "collection_index": 8, "offset": [ 144, 90 ] } },
-                  { "cell_9@inventorymonitor.cell": { "collection_index": 9, "offset": [ 0, 32 ] } },
-                  { "cell_10@inventorymonitor.cell": { "collection_index": 10, "offset": [ 18, 32 ] } },
-                  { "cell_11@inventorymonitor.cell": { "collection_index": 11, "offset": [ 36, 32 ] } },
-                  { "cell_12@inventorymonitor.cell": { "collection_index": 12, "offset": [ 54, 32 ] } },
-                  { "cell_13@inventorymonitor.cell": { "collection_index": 13, "offset": [ 72, 32 ] } },
-                  { "cell_14@inventorymonitor.cell": { "collection_index": 14, "offset": [ 90, 32 ] } },
-                  { "cell_15@inventorymonitor.cell": { "collection_index": 15, "offset": [ 108, 32 ] } },
-                  { "cell_16@inventorymonitor.cell": { "collection_index": 16, "offset": [ 126, 32 ] } },
-                  { "cell_17@inventorymonitor.cell": { "collection_index": 17, "offset": [ 144, 32 ] } },
-                  { "cell_18@inventorymonitor.cell": { "collection_index": 18, "offset": [ 0, 50 ] } },
-                  { "cell_19@inventorymonitor.cell": { "collection_index": 19, "offset": [ 18, 50 ] } },
-                  { "cell_20@inventorymonitor.cell": { "collection_index": 20, "offset": [ 36, 50 ] } },
-                  { "cell_21@inventorymonitor.cell": { "collection_index": 21, "offset": [ 54, 50 ] } },
-                  { "cell_22@inventorymonitor.cell": { "collection_index": 22, "offset": [ 72, 50 ] } },
-                  { "cell_23@inventorymonitor.cell": { "collection_index": 23, "offset": [ 90, 50 ] } },
-                  { "cell_24@inventorymonitor.cell": { "collection_index": 24, "offset": [ 108, 50 ] } },
-                  { "cell_25@inventorymonitor.cell": { "collection_index": 25, "offset": [ 126, 50 ] } },
-                  { "cell_26@inventorymonitor.cell": { "collection_index": 26, "offset": [ 144, 50 ] } },
-                  { "cell_27@inventorymonitor.cell": { "collection_index": 27, "offset": [ 0, 68 ] } },
-                  { "cell_28@inventorymonitor.cell": { "collection_index": 28, "offset": [ 18, 68 ] } },
-                  { "cell_29@inventorymonitor.cell": { "collection_index": 29, "offset": [ 36, 68 ] } },
-                  { "cell_30@inventorymonitor.cell": { "collection_index": 30, "offset": [ 54, 68 ] } },
-                  { "cell_31@inventorymonitor.cell": { "collection_index": 31, "offset": [ 72, 68 ] } },
-                  { "cell_32@inventorymonitor.cell": { "collection_index": 32, "offset": [ 90, 68 ] } },
-                  { "cell_33@inventorymonitor.cell": { "collection_index": 33, "offset": [ 108, 68 ] } },
-                  { "cell_34@inventorymonitor.cell": { "collection_index": 34, "offset": [ 126, 68 ] } },
-                  { "cell_35@inventorymonitor.cell": { "collection_index": 35, "offset": [ 144, 68 ] } },
-                  { "cell_36@inventorymonitor.cell": { "collection_index": 36, "offset": [ 0, 12 ] } },
-                  { "cell_37@inventorymonitor.cell": { "collection_index": 37, "offset": [ 18, 12 ] } },
-                  { "cell_38@inventorymonitor.cell": { "collection_index": 38, "offset": [ 36, 12 ] } },
-                  { "cell_39@inventorymonitor.cell": { "collection_index": 39, "offset": [ 54, 12 ] } },
-                  { "cell_40@inventorymonitor.cell": { "collection_index": 40, "offset": [ 82, 12 ] } },
-                  { "cell_41@inventorymonitor.cell": { "collection_index": 41, "offset": [ 144, 12 ] } },
-                  { "cell_45@inventorymonitor.cell": { "collection_index": 45, "offset": [ 170, 32 ] } },
-                  { "cell_46@inventorymonitor.cell": { "collection_index": 46, "offset": [ 188, 32 ] } },
-                  { "cell_47@inventorymonitor.cell": { "collection_index": 47, "offset": [ 206, 32 ] } },
-                  { "cell_48@inventorymonitor.cell": { "collection_index": 48, "offset": [ 224, 32 ] } },
-                  { "cell_49@inventorymonitor.cell": { "collection_index": 49, "offset": [ 242, 32 ] } },
-                  { "cell_50@inventorymonitor.cell": { "collection_index": 50, "offset": [ 260, 32 ] } },
-                  { "cell_51@inventorymonitor.cell": { "collection_index": 51, "offset": [ 278, 32 ] } },
-                  { "cell_52@inventorymonitor.cell": { "collection_index": 52, "offset": [ 296, 32 ] } },
-                  { "cell_53@inventorymonitor.cell": { "collection_index": 53, "offset": [ 314, 32 ] } },
-                  { "cell_54@inventorymonitor.cell": { "collection_index": 54, "offset": [ 170, 50 ] } },
-                  { "cell_55@inventorymonitor.cell": { "collection_index": 55, "offset": [ 188, 50 ] } },
-                  { "cell_56@inventorymonitor.cell": { "collection_index": 56, "offset": [ 206, 50 ] } },
-                  { "cell_57@inventorymonitor.cell": { "collection_index": 57, "offset": [ 224, 50 ] } },
-                  { "cell_58@inventorymonitor.cell": { "collection_index": 58, "offset": [ 242, 50 ] } },
-                  { "cell_59@inventorymonitor.cell": { "collection_index": 59, "offset": [ 260, 50 ] } },
-                  { "cell_60@inventorymonitor.cell": { "collection_index": 60, "offset": [ 278, 50 ] } },
-                  { "cell_61@inventorymonitor.cell": { "collection_index": 61, "offset": [ 296, 50 ] } },
-                  { "cell_62@inventorymonitor.cell": { "collection_index": 62, "offset": [ 314, 50 ] } },
-                  { "cell_63@inventorymonitor.cell": { "collection_index": 63, "offset": [ 170, 68 ] } },
-                  { "cell_64@inventorymonitor.cell": { "collection_index": 64, "offset": [ 188, 68 ] } },
-                  { "cell_65@inventorymonitor.cell": { "collection_index": 65, "offset": [ 206, 68 ] } },
-                  { "cell_66@inventorymonitor.cell": { "collection_index": 66, "offset": [ 224, 68 ] } },
-                  { "cell_67@inventorymonitor.cell": { "collection_index": 67, "offset": [ 242, 68 ] } },
-                  { "cell_68@inventorymonitor.cell": { "collection_index": 68, "offset": [ 260, 68 ] } },
-                  { "cell_69@inventorymonitor.cell": { "collection_index": 69, "offset": [ 278, 68 ] } },
-                  { "cell_70@inventorymonitor.cell": { "collection_index": 70, "offset": [ 296, 68 ] } },
-                  { "cell_71@inventorymonitor.cell": { "collection_index": 71, "offset": [ 314, 68 ] } }
-                ]
+              "inventory_frame@inventorymonitor.frame": {
+                "size": [ 176, 92 ],
+                "anchor_from": "bottom_middle",
+                "anchor_to": "top_middle",
+                "offset": [ 0, -1 ]
               }
-            }
+            },
+            { "content@inventorymonitor.wide_content": {} }
+          ]
+        }
+      },
+      {
+        "tall_host": {
+          "type": "panel",
+          "size": [ "50%", "100% - 27px" ],
+          "anchor_from": "top_left",
+          "anchor_to": "top_left",
+          "offset": [ "50%", 27 ],
+          "ignored": "((($im_title - '§b§w§i§m') = $im_title) or (not $im_tall))",
+          "controls": [
+            { "entity_ui_hide_vanilla@inventorymonitor.entity_ui_hide_vanilla": {} },
+            { "content@inventorymonitor.tall_content": {} }
           ]
         }
       }
