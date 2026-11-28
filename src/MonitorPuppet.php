@@ -31,6 +31,7 @@ use pocketmine\entity\Entity;
 use pocketmine\entity\Skin;
 use pocketmine\item\Item;
 use pocketmine\math\Vector3;
+use pocketmine\network\mcpe\protocol\AddActorPacket;
 use pocketmine\network\mcpe\protocol\AddPlayerPacket;
 use pocketmine\network\mcpe\protocol\MobArmorEquipmentPacket;
 use pocketmine\network\mcpe\protocol\MobEquipmentPacket;
@@ -40,6 +41,7 @@ use pocketmine\network\mcpe\protocol\types\AbilitiesData;
 use pocketmine\network\mcpe\protocol\types\AbilitiesLayer;
 use pocketmine\network\mcpe\protocol\types\command\CommandPermissions;
 use pocketmine\network\mcpe\protocol\types\DeviceOS;
+use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataCollection;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataFlags;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataProperties;
@@ -56,9 +58,10 @@ use Ramsey\Uuid\UuidInterface;
 use function array_fill;
 
 /**
- * A player model that only one viewer sees, for the model of the monitor screen. It is not a real entity of the world:
- * the server only sends its packets to the viewer, so the target's emotes and movements are not shown and an offline
- * player has a model too. The screen's live_horse_renderer finds it by its actor id ({@see getActorId()}).
+ * A model that only one viewer sees, for the model of the monitor screen. It is not a real entity of the world: the
+ * server only sends its packets to the viewer, so the target's emotes and movements are not shown. An online target is
+ * a player with the target's skin; an offline target is a wither skeleton wearing the target's equipment, since the
+ * saved skin is not drawn reliably. The screen's live_horse_renderer finds it by its actor id ({@see getActorId()}).
  */
 final class MonitorPuppet{
     /** Blocks below the viewer's feet: the model is inside the ground, out of the world view, and still drawn by the UI */
@@ -67,6 +70,9 @@ final class MonitorPuppet{
     /** Ticks the player list entry is kept after the spawn, see {@see removeListEntry()} */
     public const LIST_ENTRY_TICKS = 20;
 
+    /** The wither skeleton is 2.4 blocks tall; scaled to a player's 1.8, it fills the model box like a player */
+    public const WITHER_SKELETON_SCALE = 0.75;
+
     private readonly int $actorId;
 
     private ?UuidInterface $uuid = null;
@@ -74,9 +80,10 @@ final class MonitorPuppet{
     /** @var list<Item> head, chest, legs, feet, main hand, off hand: what the viewer has been sent */
     private array $sent = [];
 
+    /** @param Skin|null $skin null for a wither skeleton */
     public function __construct(
         private readonly Player $viewer,
-        private readonly Skin $skin
+        private readonly ?Skin $skin
     ){
         $this->actorId = Entity::nextRuntimeId();
     }
@@ -87,21 +94,32 @@ final class MonitorPuppet{
 
     /** @param list<Item> $equipment head, chest, legs, feet, main hand, off hand */
     public function spawn(array $equipment) : void{
+        if($this->skin === null){
+            $this->viewer->getNetworkSession()->sendDataPacket(AddActorPacket::create(
+                $this->actorId,
+                $this->actorId,
+                EntityIds::WITHER_SKELETON,
+                $this->position(),
+                null,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                [],
+                $this->metadata(self::WITHER_SKELETON_SCALE)->getAll(),
+                new PropertySyncData([], []),
+                [],
+                null
+            ));
+            $this->update($equipment);
+            return;
+        }
+
         $session = $this->viewer->getNetworkSession();
         $uuid = Uuid::uuid4();
         $session->sendDataPacket(PlayerListPacket::create([
             PlayerListEntry::createAdditionEntry($uuid, $this->actorId, "", $session->getTypeConverter()->getSkinAdapter()->toSkinData($this->skin))
         ]));
-
-        $metadata = new EntityMetadataCollection();
-        $metadata->setGenericFlag(EntityMetadataFlags::IMMOBILE, true);
-        $metadata->setGenericFlag(EntityMetadataFlags::SILENT, true);
-        $metadata->setGenericFlag(EntityMetadataFlags::CAN_SHOW_NAMETAG, false);
-        $metadata->setGenericFlag(EntityMetadataFlags::ALWAYS_SHOW_NAMETAG, false);
-        $metadata->setString(EntityMetadataProperties::NAMETAG, "");
-        $metadata->setFloat(EntityMetadataProperties::SCALE, 1.0);
-        $metadata->setFloat(EntityMetadataProperties::BOUNDING_BOX_WIDTH, 0.0);
-        $metadata->setFloat(EntityMetadataProperties::BOUNDING_BOX_HEIGHT, 0.0);
 
         $session->sendDataPacket(AddPlayerPacket::create(
             $uuid,
@@ -115,7 +133,7 @@ final class MonitorPuppet{
             0.0,
             new ItemStackWrapper(0, ItemStack::null()),
             GameMode::SURVIVAL,
-            $metadata->getAll(),
+            $this->metadata(1.0)->getAll(),
             new PropertySyncData([], []),
             new AbilitiesData(CommandPermissions::NORMAL, PlayerPermissions::VISITOR, $this->actorId, [
                 new AbilitiesLayer(AbilitiesLayer::LAYER_BASE, array_fill(0, AbilitiesLayer::NUMBER_OF_ABILITIES, false), 0.0, 0.0, 0.0)
@@ -127,6 +145,19 @@ final class MonitorPuppet{
         ));
         $this->update($equipment);
         $this->uuid = $uuid;
+    }
+
+    private function metadata(float $scale) : EntityMetadataCollection{
+        $metadata = new EntityMetadataCollection();
+        $metadata->setGenericFlag(EntityMetadataFlags::IMMOBILE, true);
+        $metadata->setGenericFlag(EntityMetadataFlags::SILENT, true);
+        $metadata->setGenericFlag(EntityMetadataFlags::CAN_SHOW_NAMETAG, false);
+        $metadata->setGenericFlag(EntityMetadataFlags::ALWAYS_SHOW_NAMETAG, false);
+        $metadata->setString(EntityMetadataProperties::NAMETAG, "");
+        $metadata->setFloat(EntityMetadataProperties::SCALE, $scale);
+        $metadata->setFloat(EntityMetadataProperties::BOUNDING_BOX_WIDTH, 0.0);
+        $metadata->setFloat(EntityMetadataProperties::BOUNDING_BOX_HEIGHT, 0.0);
+        return $metadata;
     }
 
     /**

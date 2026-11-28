@@ -35,9 +35,9 @@
   - One screen laid out like the vanilla inventory: armor, the player's model, offhand, main inventory and hotbar (the
     held slot is framed), the item on the cursor (view only), and the name and online / offline status of the player as
     the title. A tab on the top edge switches to the ender chest. The viewer's own inventory is beside it.
-  - The model is a puppet only the viewer sees (a player entity sent to the viewer alone, under the viewer's feet), so
-    offline players have one too and the target's emotes or movements are not shown. It wears the target's skin,
-    armor and held items.
+  - The model is a puppet only the viewer sees (an entity sent to the viewer alone, under the viewer's feet), so the
+    target's emotes or movements are not shown. An online target is a player with the target's skin, an offline target
+    a wither skeleton; both wear the target's armor and held items.
   - The screen is drawn by a bundled **resource pack** (JSON UI), see [Resource pack](#resource-pack).
   - Armor slots only accept the matching armor piece.
   - The command name, aliases and default permission are configurable.
@@ -100,7 +100,7 @@ The screen has 74 slots (`MonitorSlots`). The pack reads the slot number as the 
 | 40      | offhand                | off-hand inventory 0                        | two-way                                       |
 | 41      | cursor                 | cursor inventory 0 (online players only)    | read-only                                     |
 | 42      | name and status label  | data slot (`#hover_text` of the item name)  | locked                                        |
-| 43      | model                  | data slot: the puppet's actor id in quotes (`"<id>"`), read as `#entity_id` by `live_horse_renderer` | locked |
+| 43      | model                  | data slot: the puppet's actor id in quotes (`"<id>"`, `"<id>"m` for the wither skeleton of an offline target), read as `#entity_id` by `live_horse_renderer` | locked |
 | 44      | held hotbar slot       | data slot: `h<index>` (a bare number would be read as a number), frames that hotbar cell | locked |
 | 45-71   | ender chest            | ender chest 0-26                            | two-way                                       |
 | 72-73   | tab icons              | a chest and an ender chest, drawn on the tabs by `#item_id_aux` | locked                    |

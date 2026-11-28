@@ -31,9 +31,6 @@ use blugin\inventorymonitor\inventory\OfflinePlayerInventory;
 use kim\present\libcontainer\Menu;
 use kim\present\libcontainer\ui\ScreenMenu;
 use pocketmine\block\VanillaBlocks;
-use pocketmine\data\SavedDataLoadingException;
-use pocketmine\entity\Human;
-use pocketmine\entity\InvalidSkinException;
 use pocketmine\entity\Skin;
 use pocketmine\inventory\CallbackInventoryListener;
 use pocketmine\inventory\PlayerInventory;
@@ -46,7 +43,6 @@ use pocketmine\scheduler\ClosureTask;
 use function array_values;
 use function count;
 use function spl_object_id;
-use function str_repeat;
 use function strtolower;
 
 /**
@@ -100,26 +96,16 @@ final class MonitorInstance{
         }
         $offline = OfflinePlayerInventory::load($data);
         //An offline player has no cursor item, so that slot of the screen stays empty
-        try{
-            $skin = Human::parseSkinNBT($data);
-        }catch(SavedDataLoadingException | InvalidSkinException){
-            $skin = self::defaultSkin();
-        }
         return self::$instances[$key] = new self($plugin, $playerName, [
             MonitorSlots::SOURCE_INVENTORY => $offline->main,
             MonitorSlots::SOURCE_ARMOR => $offline->armor,
             MonitorSlots::SOURCE_OFFHAND => $offline->offHand,
             MonitorSlots::SOURCE_ENDER => $offline->ender,
-        ], $offline, $skin, null, $data->getInt(self::TAG_SELECTED_INVENTORY_SLOT, 0));
+        ], $offline, null, null, $data->getInt(self::TAG_SELECTED_INVENTORY_SLOT, 0));
     }
 
     /** Hotbar slot a player held when the data was saved, see Human::saveNBT() */
     private const TAG_SELECTED_INVENTORY_SLOT = "SelectedInventorySlot";
-
-    /** A plain gray skin for an offline player whose data has no skin */
-    private static function defaultSkin() : Skin{
-        return new Skin("Standard_Custom", str_repeat("\x80\x80\x80\xff", 64 * 64));
-    }
 
     /** @var array<int, MonitorViewer> player object id => viewer */
     private array $viewers = [];
@@ -136,13 +122,14 @@ final class MonitorInstance{
      * @param array<string, Inventory> $sources monitored inventories by {@see MonitorSlots}::SOURCE_* key
      * @param OfflinePlayerInventory|null $offline set when the data comes from the player data file, it is saved when
      *                                             the last viewer closes the screen
+     * @param Skin|null $skin of an online player; the model of an offline player is a wither skeleton
      */
     private function __construct(
         private readonly InventoryMonitor $plugin,
         private readonly string $playerName,
         private readonly array $sources,
         private readonly ?OfflinePlayerInventory $offline,
-        private readonly Skin $skin,
+        private readonly ?Skin $skin,
         private readonly ?PlayerInventory $heldInventory,
         private readonly int $offlineHeldIndex
     ){
@@ -241,10 +228,10 @@ final class MonitorInstance{
                 $lang->translate($this->isOnline() ? "monitor.status.online" : "monitor.status.offline")
             ]));
             //live_horse_renderer takes the id as a string; quoted, the screen's expression keeps it one. Not a DataSlot:
-            //its NUL terminator would stay in the id and the renderer would draw nothing
+            //its NUL terminator would stay in the id and the renderer would draw nothing. The suffix "m" marks a mob
             $menu->lock(MonitorSlots::MODEL)->setItem(
                 MonitorSlots::MODEL,
-                VanillaItems::PAPER()->setCustomName('"' . $viewer->puppet->getActorId() . '"')
+                VanillaItems::PAPER()->setCustomName('"' . $viewer->puppet->getActorId() . '"' . ($this->skin === null ? "m" : ""))
             );
             $this->sendHeldIndex($menu);
             $menu->lock(MonitorSlots::TAB_INVENTORY)->setItem(MonitorSlots::TAB_INVENTORY, VanillaBlocks::CHEST()->asItem());

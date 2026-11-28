@@ -8,9 +8,9 @@
   top edge of the target's frame, as in the vanilla tabbed screens, and the frame's title is the target's name and
   status. In the classic UI the viewer's own
   inventory is a second frame of the same height beside it, with the close button.
-- The model is a puppet player sent only to the viewer (under the viewer's feet, removed when the screen closes). It
-  wears the target's skin (an offline player's saved skin), armor, main-hand and off-hand items and follows their
-  changes. Emotes and movements of the target are not shown.
+- The model is a puppet sent only to the viewer (under the viewer's feet, removed when the screen closes): a player
+  with the target's skin, or a wither skeleton for an offline target. It wears the target's armor, main-hand and
+  off-hand items and follows their changes. Emotes and movements of the target are not shown.
 - The hotbar slot the target holds is framed, and the frame follows the target's selection (an offline player's saved
   selection).
 - Slots 43 (the model's actor id) and 44 (the held hotbar slot) are data slots now; no slot is reserved. Slots 72 and

@@ -155,6 +155,36 @@
   // turned into a number by the expression and not drawn (bedrock-research, entity inventory UI 10.1).
   // live_horse_renderer projects the model itself, so it is drawn whatever the layer sum is; the model is about twice
   // as tall as the control, so the box clips it.
+  // An offline target is a wither skeleton, written with the suffix m ("<id>"m). The renderer draws a player with its
+  // head at the top of the control but a mob with its feet in the middle, so the mob has its own renderer placed lower.
+  // Given the same id, only the last renderer drew the model: the player renderer is the last one and does not read
+  // "<id>"m as an id, the mob renderer removes the m.
+  "model_view": {
+    "type": "panel",
+    "size": [ 32, 32 ],
+    "offset": "$model_offset",
+    "anchor_from": "top_middle",
+    "anchor_to": "top_middle",
+    "controls": [
+      {
+        "renderer": {
+          "type": "custom",
+          "renderer": "live_horse_renderer",
+          "layer": 2,
+          "size": [ 32, 32 ],
+          "bindings": [
+            {
+              "binding_type": "view",
+              "binding_condition": "always",
+              "source_control_name": "inventorymonitor_model",
+              "source_property_name": "$model_id",
+              "target_property_name": "#entity_id"
+            }
+          ]
+        }
+      }
+    ]
+  },
   "model": {
     "type": "image",
     "texture": "textures/ui/Black",
@@ -164,34 +194,8 @@
     "anchor_from": "top_left",
     "anchor_to": "top_left",
     "controls": [
-      {
-        "holder": {
-          "type": "panel",
-          "size": [ 32, 32 ],
-          "offset": [ 0, 4 ],
-          "anchor_from": "top_middle",
-          "anchor_to": "top_middle",
-          "controls": [
-            {
-              "renderer": {
-                "type": "custom",
-                "renderer": "live_horse_renderer",
-                "layer": 2,
-                "size": [ 32, 32 ],
-                "bindings": [
-                  {
-                    "binding_type": "view",
-                    "binding_condition": "always",
-                    "source_control_name": "inventorymonitor_model",
-                    "source_property_name": "(#saved - '§o' - '§f' - '§r')",
-                    "target_property_name": "#entity_id"
-                  }
-                ]
-              }
-            }
-          ]
-        }
-      }
+      { "mob@inventorymonitor.model_view": { "$model_offset": [ 0, 50 ], "$model_id": "(#saved - '§o' - '§f' - '§r' - 'm')" } },
+      { "player@inventorymonitor.model_view": { "$model_offset": [ 0, 4 ], "$model_id": "(#saved - '§o' - '§f' - '§r')" } }
     ]
   },
   "model_border": {

@@ -22,6 +22,7 @@ const TAB_H = 22;                   // the tabs stand on the top edge of the win
 const MODEL_X = CELL + 2;           // the model box (52 x 70) right of the armor column, as in the vanilla screen
 const MODEL_SIZE = 32;              // the renderer control; the model is about twice as tall, clipped by the box
 const MODEL_Y = 4;                  // the renderer inside the box (the player's head is at the top of the control)
+const MOB_Y = 50;                   // the mob renderer: a mob's feet are in the middle of the control, near the box bottom
 const OFFHAND_X = MODEL_X + 52 + 4; // right of the model box
 const OFFHAND_Y = 3 * CELL;         // the bottom row of the armor column
 const CURSOR_X = CONTENT_W - CELL;  // the last column
@@ -90,6 +91,7 @@ file_put_contents(
         '{{MODEL_BORDER_X}}' => (string) (MODEL_X - 1),
         '{{MODEL_SIZE}}' => (string) MODEL_SIZE,
         '{{MODEL_Y}}' => (string) MODEL_Y,
+        '{{MOB_Y}}' => (string) MOB_Y,
         '{{OFFHAND_X}}' => (string) OFFHAND_X,
         '{{CURSOR_X}}' => (string) CURSOR_X,
         '{{CURSOR_CAPTION_X}}' => (string) (CURSOR_X - 44),
