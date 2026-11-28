@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 6.1.0 (2026-11-28)
 
 ### ✨ Added
 - The screen is laid out like the vanilla inventory: armor column, the player's model and the offhand, then the main

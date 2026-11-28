@@ -43,8 +43,9 @@
   - The command name, aliases and default permission are configurable.
   - Multi-language messages (`eng`, `kor`), editable in `plugins/InventoryMonitor/lang/<lang>/lang.ini`.
 
-<!-- TODO: replace with a screenshot of the screen once it is checked in game -->
 ![screen](assets/screenshot/screen.png?raw=true)
+
+[▶ Demo video](assets/screenshot/demo.mp4)
 
 ---
 
