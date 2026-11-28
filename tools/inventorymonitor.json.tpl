@@ -89,16 +89,41 @@
     "$text|default": ""
   },
 
-  // The window title: the name and status of the target, sent by the server as the name of the item in slot 42
-  // (DataSlot). #hover_text holds the name (and lore); the italic and reset codes of item names are removed, color codes
-  // stay. The server colors the name (light colors such as §b and §7), so the label has a shadow like an item name.
-  "title": {
+  // The name of the item in a data slot (42..44), kept in #saved. #hover_text is the tooltip text and the client
+  // empties it for a few frames on every press in the screen, so whatever reads it directly blinks; the latch copies it
+  // only when it turns to a new non-empty value (bedrock-research, bindings BND-18). The panel starts hidden so the
+  // first value also changes its visibility. Readers find it by name with source_control_name.
+  "latch": {
+    "type": "panel",
+    "size": [ 0, 0 ],
+    "visible": false,
+    "property_bag": { "#saved": "" },
+    "bindings": [
+      { "binding_type": "collection", "binding_collection_name": "container_items", "binding_name": "#hover_text", "binding_condition": "always" },
+      { "binding_type": "collection", "binding_collection_name": "container_items", "binding_name": "#hover_text", "binding_name_override": "#saved", "binding_condition": "visibility_changed" },
+      { "binding_type": "view", "source_property_name": "((not (#hover_text = '')) and (not (#hover_text = #saved)))", "target_property_name": "#visible" }
+    ]
+  },
+  "latches": {
     "type": "stack_panel",
+    "size": [ 0, 0 ],
+    "collection_name": "container_items",
+    "controls": [
+      { "inventorymonitor_data@inventorymonitor.latch": { "collection_index": 42 } },
+      { "inventorymonitor_model@inventorymonitor.latch": { "collection_index": 43 } },
+      { "inventorymonitor_held@inventorymonitor.latch": { "collection_index": 44 } }
+    ]
+  },
+
+  // The window title: the name and status of the target, sent by the server as the name of the item in slot 42
+  // (DataSlot). The italic and reset codes of item names are removed, color codes stay. The server colors the name
+  // (light colors such as §b and §7), so the label has a shadow like an item name.
+  "title": {
+    "type": "panel",
     "size": [ "100% - 40px", 10 ],
     "offset": [ 0, 6 ],
     "anchor_from": "top_middle",
     "anchor_to": "top_middle",
-    "collection_name": "container_items",
     "controls": [
       {
         "text": {
@@ -109,12 +134,11 @@
           "shadow": true,
           "color": [ 0.25, 0.25, 0.25 ],
           "text": "#text",
-          "collection_index": 42,
           "bindings": [
-            { "binding_type": "collection", "binding_collection_name": "container_items", "binding_name": "#hover_text", "binding_condition": "always" },
             {
               "binding_type": "view",
-              "source_property_name": "(#hover_text - '§o' - '§f' - '§r')",
+              "source_control_name": "inventorymonitor_data",
+              "source_property_name": "(#saved - '§o' - '§f' - '§r')",
               "target_property_name": "#text"
             }
           ]
@@ -139,12 +163,11 @@
     "controls": [
       {
         "holder": {
-          "type": "stack_panel",
+          "type": "panel",
           "size": [ {{MODEL_SIZE}}, {{MODEL_SIZE}} ],
           "offset": [ 0, {{MODEL_Y}} ],
           "anchor_from": "top_middle",
           "anchor_to": "top_middle",
-          "collection_name": "container_items",
           "controls": [
             {
               "renderer": {
@@ -152,13 +175,12 @@
                 "renderer": "live_horse_renderer",
                 "layer": 2,
                 "size": [ {{MODEL_SIZE}}, {{MODEL_SIZE}} ],
-                "collection_index": 43,
                 "bindings": [
-                  { "binding_type": "collection", "binding_collection_name": "container_items", "binding_name": "#hover_text", "binding_condition": "always" },
                   {
                     "binding_type": "view",
                     "binding_condition": "always",
-                    "source_property_name": "(#hover_text - '§o' - '§f' - '§r')",
+                    "source_control_name": "inventorymonitor_model",
+                    "source_property_name": "(#saved - '§o' - '§f' - '§r')",
                     "target_property_name": "#entity_id"
                   }
                 ]
@@ -181,11 +203,10 @@
   // The selection frame on the hotbar cell the target holds. The server writes "h<index>" as the name of the item in
   // slot 44 (a bare number would be read as a number); each frame shows only for its own index.
   "held_frame": {
-    "type": "stack_panel",
+    "type": "panel",
     "size": [ 22, 22 ],
     "anchor_from": "top_left",
     "anchor_to": "top_left",
-    "collection_name": "container_items",
     "controls": [
       {
         "frame": {
@@ -193,13 +214,12 @@
           "texture": "textures/ui/selected_hotbar_slot",
           "size": [ 22, 22 ],
           "layer": 20,
-          "collection_index": 44,
           "bindings": [
-            { "binding_type": "collection", "binding_collection_name": "container_items", "binding_name": "#hover_text", "binding_condition": "always" },
             {
               "binding_type": "view",
               "binding_condition": "always",
-              "source_property_name": "((#hover_text - '§o' - '§f' - '§r') = $held_key)",
+              "source_control_name": "inventorymonitor_held",
+              "source_property_name": "((#saved - '§o' - '§f' - '§r') = $held_key)",
               "target_property_name": "#visible"
             }
           ]
@@ -313,6 +333,7 @@
     "anchor_from": "top_left",
     "anchor_to": "top_left",
     "controls": [
+      { "latches@inventorymonitor.latches": {} },
       { "model_border@inventorymonitor.model_border": { "offset": [ {{MODEL_BORDER_X}}, 0 ] } },
       { "model@inventorymonitor.model": { "offset": [ {{MODEL_X}}, 1 ] } },
       {
