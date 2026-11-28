@@ -20,9 +20,9 @@ final class MonitorSlotsTest extends TestCase{
                 $used[$slot] = $binding["source"];
             }
         }
-        //everything but the data slot and the two reserved slots is mirrored: 36 + 4 + 1 + 1 + 27
+        //everything but the three data slots and the two tab icons is mirrored: 36 + 4 + 1 + 1 + 27
         self::assertCount(69, $used);
-        self::assertSame(MonitorSlots::SIZE - 3, count($used));
+        self::assertSame(MonitorSlots::SIZE - 5, count($used));
     }
 
     public function testUnboundSlots() : void{
@@ -30,6 +30,9 @@ final class MonitorSlotsTest extends TestCase{
         self::assertNull(MonitorSlots::sourceOf(MonitorSlots::MODEL));
         self::assertNull(MonitorSlots::sourceOf(MonitorSlots::HELD));
         self::assertSame([42, 43, 44], [MonitorSlots::DATA, MonitorSlots::MODEL, MonitorSlots::HELD]);
+        self::assertNull(MonitorSlots::sourceOf(MonitorSlots::TAB_INVENTORY));
+        self::assertNull(MonitorSlots::sourceOf(MonitorSlots::TAB_ENDER));
+        self::assertSame([72, 73], [MonitorSlots::TAB_INVENTORY, MonitorSlots::TAB_ENDER]);
         for($slot = 0; $slot < MonitorSlots::SIZE; ++$slot){
             self::assertFalse(MonitorSlots::isReserved($slot));
         }
@@ -49,7 +52,8 @@ final class MonitorSlotsTest extends TestCase{
             self::assertSame(MonitorSlots::SOURCE_ENDER, MonitorSlots::sourceOf($slot));
         }
         self::assertNull(MonitorSlots::sourceOf(72));
-        self::assertSame(72, MonitorSlots::SIZE);
+        self::assertNull(MonitorSlots::sourceOf(73));
+        self::assertSame(74, MonitorSlots::SIZE);
         self::assertSame(MonitorSlots::HOTBAR_COUNT + MonitorSlots::MAIN_COUNT, MonitorSlots::INVENTORY_COUNT);
         self::assertSame(MonitorSlots::HOTBAR_START + MonitorSlots::HOTBAR_COUNT, MonitorSlots::MAIN_START);
     }

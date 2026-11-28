@@ -4,15 +4,17 @@
 
 ### ✨ Added
 - The screen is laid out like the vanilla inventory: armor column, the player's model and the offhand, then the main
-  inventory and hotbar. The tabs "Inventory" and "Ender Chest" stand on the top edge of the target's frame, as in the
-  vanilla tabbed screens, and the frame's title is the target's name and status. In the classic UI the viewer's own
+  inventory and hotbar. Two square tabs with a chest and an ender chest icon (the items of slots 72 and 73) stand on the
+  top edge of the target's frame, as in the vanilla tabbed screens, and the frame's title is the target's name and
+  status. In the classic UI the viewer's own
   inventory is a second frame of the same height beside it, with the close button.
 - The model is a puppet player sent only to the viewer (under the viewer's feet, removed when the screen closes). It
   wears the target's skin (an offline player's saved skin), armor, main-hand and off-hand items and follows their
   changes. Emotes and movements of the target are not shown.
 - The hotbar slot the target holds is framed, and the frame follows the target's selection (an offline player's saved
   selection).
-- Slots 43 (the model's actor id) and 44 (the held hotbar slot) are data slots now; no slot is reserved.
+- Slots 43 (the model's actor id) and 44 (the held hotbar slot) are data slots now; no slot is reserved. Slots 72 and
+  73 hold the tab icons, so the screen has 74 slots.
 - The plugin and its resource pack are 6.1.0.
 
 ## 6.0.1 (2026-11-27)

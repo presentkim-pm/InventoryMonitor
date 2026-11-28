@@ -90,7 +90,7 @@ Layout changes: edit the constants of `tools/generate-ui.php` (or `tools/invento
 
 #### Slot contract
 
-The screen has 72 slots (`MonitorSlots`). The pack reads the slot number as the `collection_index` of `container_items`.
+The screen has 74 slots (`MonitorSlots`). The pack reads the slot number as the `collection_index` of `container_items`.
 
 | slot    | content                | source                                      | mode                                          |
 |---------|------------------------|---------------------------------------------|-----------------------------------------------|
@@ -103,6 +103,7 @@ The screen has 72 slots (`MonitorSlots`). The pack reads the slot number as the 
 | 43      | model                  | data slot: the puppet's actor id in quotes (`"<id>"`), read as `#entity_id` by `live_horse_renderer` | locked |
 | 44      | held hotbar slot       | data slot: `h<index>` (a bare number would be read as a number), frames that hotbar cell | locked |
 | 45-71   | ender chest            | ender chest 0-26                            | two-way                                       |
+| 72-73   | tab icons              | a chest and an ender chest, drawn on the tabs by `#item_id_aux` | locked                    |
 
 The ranges are mirrored with libcontainer's `bind()`: what happens to the player shows up on the screen, and what a
 viewer does on the screen is written to the player (or to the saved data of an offline player).

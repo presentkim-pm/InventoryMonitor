@@ -20,7 +20,8 @@
 // Slot contract (src/MonitorSlots.php):
 //   0..8 hotbar, 9..35 main inventory, 36..39 armor, 40 offhand, 41 cursor (read-only), 42 name label (#hover_text),
 //   43 model entity id (#hover_text, the quoted actor id of the puppet the server spawned for this viewer),
-//   44 held hotbar slot (#hover_text "h<index>"), 45..71 ender chest
+//   44 held hotbar slot (#hover_text "h<index>"), 45..71 ender chest,
+//   72..73 tab icons (#item_id_aux of a chest and an ender chest)
 //
 // LAYOUT of the target panel, in GUI pixels from the top-left of its content ({{CONTENT_W}} x {{CONTENT_H}}):
 //   armor        x=0       4 cells from y=0, like the vanilla armor column
@@ -28,8 +29,9 @@
 //   offhand      x={{OFFHAND_X}}      next to the bottom of the model
 //   cursor       x={{CURSOR_X}}     the last column, beside the model
 //   items        y={{ITEMS_Y}}     inventory tab: 3 rows + hotbar; ender tab: 3 rows of the ender chest
-// The frame around it has the name of the target as its title, and the tabs "Inventory" and "Ender Chest" (radio
-// toggles, client side only) stand on its top edge, as in the vanilla tabbed screens.
+// The frame around it has the name of the target as its title, and two square tabs, the inventory (a chest icon) and
+// the ender chest (an ender chest icon), radio toggles on the client side only, stand on its top edge, as in the
+// vanilla tabbed screens.
 // Classic UI: two frames of the same height side by side, the target on the left and the viewer's own inventory (vanilla
 // collections) with the close button on the right.
 // Pocket UI: the target frame in the vanilla container half (the right half); the vanilla inventory half (the left half,
@@ -231,23 +233,22 @@
 
   // A tab: a radio toggle of the group "inventorymonitor_tabs". The pages below follow the toggle "ender_tab".
   // The face reaches 6 pixels below the tab, over the top edge of the window, so the selected tab joins the window.
+  // The icon is the item the server puts in the tab's slot (72 a chest, 73 an ender chest).
   "tab_face": {
     "type": "panel",
     "size": [ "100%", "100%" ],
     "controls": [
       { "bg": { "type": "image", "texture": "$tab_texture", "size": [ "100%", "100% + 6px" ], "anchor_from": "top_left", "anchor_to": "top_left" } },
-      { "icon": { "type": "image", "layer": 1, "texture": "$tab_icon", "size": "$tab_icon_size", "offset": [ 4, 0 ], "anchor_from": "left_middle", "anchor_to": "left_middle" } },
       {
-        "label": {
-          "type": "label",
+        "icon": {
+          "type": "custom",
+          "renderer": "inventory_item_renderer",
           "layer": 1,
-          "size": [ "100% - 24px", 10 ],
-          "offset": [ 23, 0 ],
-          "anchor_from": "left_middle",
-          "anchor_to": "left_middle",
-          "text": "$tab_text",
-          "color": "$tab_text_color",
-          "shadow": false
+          "size": [ 16, 16 ],
+          "property_bag": { "#item_id_aux": 0 },
+          "bindings": [
+            { "binding_type": "collection", "binding_collection_name": "container_items", "binding_name": "#item_id_aux", "binding_condition": "always" }
+          ]
         }
       }
     ]
@@ -281,36 +282,33 @@
     "unchecked_locked_control": "off",
     "unchecked_locked_hover_control": "off",
     "controls": [
-      { "on@inventorymonitor.tab_face": { "$tab_texture": "textures/ui/TabTopFront", "$tab_text_color": [ 0.25, 0.25, 0.25 ] } },
-      { "off@inventorymonitor.tab_face": { "$tab_texture": "textures/ui/TabTopBack", "$tab_text_color": [ 0.9, 0.9, 0.9 ] } },
-      { "off_hover@inventorymonitor.tab_face": { "$tab_texture": "textures/ui/TabTopBackHover", "$tab_text_color": [ 1, 1, 1 ] } }
+      { "on@inventorymonitor.tab_face": { "$tab_texture": "textures/ui/TabTopFront" } },
+      { "off@inventorymonitor.tab_face": { "$tab_texture": "textures/ui/TabTopBack" } },
+      { "off_hover@inventorymonitor.tab_face": { "$tab_texture": "textures/ui/TabTopBackHover" } }
     ]
   },
   "tabs": {
-    "type": "panel",
+    "type": "stack_panel",
+    "orientation": "horizontal",
     "size": [ {{TABS_W}}, {{TAB_H}} ],
     "offset": [ {{TABS_X}}, {{TABS_Y}} ],
     "layer": 3,
     "anchor_from": "top_left",
     "anchor_to": "top_left",
+    "collection_name": "container_items",
     "controls": [
       {
         "inventory_tab@inventorymonitor.tab": {
+          "collection_index": 72,
           "$tab_index": 0,
-          "$tab_default": true,
-          "$tab_text": "inventorymonitor.inventory",
-          "$tab_icon": "textures/ui/inventory_icon",
-          "$tab_icon_size": [ 16, 11 ]
+          "$tab_default": true
         }
       },
       {
         "ender_tab@inventorymonitor.tab": {
+          "collection_index": 73,
           "$tab_index": 1,
-          "$tab_default": false,
-          "$tab_text": "inventorymonitor.ender",
-          "$tab_icon": "textures/blocks/ender_chest_front",
-          "$tab_icon_size": [ 14, 14 ],
-          "offset": [ {{TAB_W}}, 0 ]
+          "$tab_default": false
         }
       }
     ]

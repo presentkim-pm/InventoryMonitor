@@ -30,6 +30,7 @@ namespace blugin\inventorymonitor;
 use blugin\inventorymonitor\inventory\OfflinePlayerInventory;
 use kim\present\libcontainer\Menu;
 use kim\present\libcontainer\ui\ScreenMenu;
+use pocketmine\block\VanillaBlocks;
 use pocketmine\data\SavedDataLoadingException;
 use pocketmine\entity\Human;
 use pocketmine\entity\InvalidSkinException;
@@ -246,6 +247,8 @@ final class MonitorInstance{
                 VanillaItems::PAPER()->setCustomName('"' . $viewer->puppet->getActorId() . '"')
             );
             $this->sendHeldIndex($menu);
+            $menu->lock(MonitorSlots::TAB_INVENTORY)->setItem(MonitorSlots::TAB_INVENTORY, VanillaBlocks::CHEST()->asItem());
+            $menu->lock(MonitorSlots::TAB_ENDER)->setItem(MonitorSlots::TAB_ENDER, VanillaBlocks::ENDER_CHEST()->asItem());
         });
 
         $menu->onClose(function(Player $player, Menu $menu) use ($viewer) : void{

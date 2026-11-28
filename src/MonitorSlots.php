@@ -40,13 +40,15 @@ namespace blugin\inventorymonitor;
  *   40      offhand           PlayerOffHandInventory 0  (two-way)
  *   41      cursor            PlayerCursorInventory 0   (read-only, online players only)
  *   42      data slot         name and online / offline status of the target, drawn as a label (locked)
- *   43..44  reserved          locked and empty
+ *   43      data slot         actor id of the model (locked)
+ *   44      data slot         hotbar slot the target holds (locked)
  *   45..71  ender chest       EnderChest 0..26          (two-way)
+ *   72..73  tab icons         a chest and an ender chest, drawn on the tabs (locked)
  */
 final class MonitorSlots{
     /** Title prefix the pack looks for, see {@see \kim\present\libcontainer\ui\Screen} */
     public const SCREEN_KEY = "§b§w§i§m";
-    public const SIZE = 72;
+    public const SIZE = 74;
 
     public const HOTBAR_START = 0;
     public const HOTBAR_COUNT = 9;
@@ -68,6 +70,10 @@ final class MonitorSlots{
     public const RESERVED_COUNT = 0;
     public const ENDER_START = 45;
     public const ENDER_COUNT = 27;
+    /** The item drawn on the "Inventory" tab */
+    public const TAB_INVENTORY = 72;
+    /** The item drawn on the "Ender Chest" tab */
+    public const TAB_ENDER = 73;
 
     public const SOURCE_INVENTORY = "inventory";
     public const SOURCE_ARMOR = "armor";

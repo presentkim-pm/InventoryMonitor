@@ -63,7 +63,7 @@ final class ResourcePackTest extends TestCase{
         self::assertIsString($ui);
         preg_match_all('/"collection_index":\s*(\d+)/', $ui, $matches);
         self::assertSame(
-            [MonitorSlots::DATA, MonitorSlots::MODEL, MonitorSlots::HELD],
+            [MonitorSlots::DATA, MonitorSlots::MODEL, MonitorSlots::HELD, MonitorSlots::TAB_INVENTORY, MonitorSlots::TAB_ENDER],
             array_values(array_unique(array_map('intval', $matches[1])))
         );
     }
