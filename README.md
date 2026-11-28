@@ -45,7 +45,7 @@
 
 ![screen](assets/screenshot/screen.png?raw=true)
 
-[▶ Demo video](assets/screenshot/demo.mp4)
+https://github.com/user-attachments/assets/97cc63e2-bc44-421e-8357-28114f4d01bb
 
 ---
 
