@@ -59,15 +59,16 @@
     ]
   },
 
-  // The vanilla empty armor / shield silhouette, shown while the cell is empty
+  // The vanilla empty armor / shield silhouette, shown while the cell is empty. It reads #item_id_aux (0 or -1 when
+  // empty): #hover_text is emptied for a few frames on every press and would show the silhouette over the item.
   "silhouette": {
     "type": "image",
     "layer": 2,
     "size": [ 16, 16 ],
     "texture": "$silhouette",
     "bindings": [
-      { "binding_type": "collection", "binding_collection_name": "container_items", "binding_name": "#hover_text", "binding_condition": "always" },
-      { "binding_type": "view", "source_property_name": "(#hover_text = '')", "target_property_name": "#visible" }
+      { "binding_type": "collection", "binding_collection_name": "container_items", "binding_name": "#item_id_aux", "binding_condition": "always" },
+      { "binding_type": "view", "source_property_name": "(#item_id_aux < 1)", "target_property_name": "#visible" }
     ]
   },
   "helmet@inventorymonitor.silhouette": { "$silhouette": "textures/ui/empty_armor_slot_helmet" },
